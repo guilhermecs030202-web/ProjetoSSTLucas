@@ -1,0 +1,106 @@
+erDiagram
+    EMPRESA {
+        string id_empresa PK
+        string razao_social
+        string cnpj
+    }
+    CARGO {
+        string id_cargo PK
+        string nome_cargo
+        string id_empresa FK
+    }
+    FUNCIONARIO {
+        string id_funcionario PK
+        string matricula
+        string nome_completo
+        string cpf
+        date data_admissao
+        date data_nascimento
+        string id_empresa FK
+        string id_cargo FK
+    }
+    MEMBRO_CIPA {
+        string id_membro PK
+        string nome_membro
+        string id_empresa FK
+    }
+    DOCUMENTO_SST {
+        string id_documento PK
+        string tipo_documento
+        date data_emissao_upload
+        date data_validade
+        string status_documento
+        string id_empresa FK
+    }
+    TREINAMENTO {
+        string id_treinamento PK
+        string tipo_treinamento
+        date data_realizacao
+        date data_validade
+        string status_treinamento
+        string observacoes
+        string id_funcionario FK
+    }
+    ASO_ATESTADO {
+        string id_aso PK
+        string tipo_exame
+        date data_exame
+        date data_validade
+        string status_aptidao
+        string riscos_ocupacionais
+        string id_funcionario FK
+    }
+    EXAME_CLINICO {
+        string id_exame PK
+        string nome_exame
+        date data_realizacao
+        string id_aso FK
+    }
+    ACIDENTE_TRABALHO {
+        string id_acidente PK
+        date data_acidente
+        string gravidade_lesao
+        string descricao_evento
+        string medidas_adotadas
+        string anexo_imagem
+        string id_funcionario FK
+    }
+    COMPRA_EPI {
+        string id_compra PK
+        date data_compra
+        float valor_total_compra
+    }
+    CATALOGO_EPI {
+        string id_epi PK
+        string nome_equipamento
+        string ca
+        string descricao_material
+        float preco_unitario
+    }
+    ITEM_COMPRA_EPI {
+        string id_item_compra PK
+        string id_compra FK
+        string id_epi FK
+        int quantidade_comprada
+        float preco_praticado
+    }
+    DISTRIBUICAO_EPI {
+        string id_distribuicao PK
+        string id_item_compra FK
+        string id_empresa FK
+        int quantidade_destinada
+    }
+
+    EMPRESA ||--o{ CARGO : "possui"
+    EMPRESA ||--o{ FUNCIONARIO : "emprega"
+    CARGO ||--o{ FUNCIONARIO : "exerce"
+    EMPRESA ||--o{ MEMBRO_CIPA : "mantem"
+    EMPRESA ||--o{ DOCUMENTO_SST : "possui"
+    FUNCIONARIO ||--o{ TREINAMENTO : "realiza"
+    FUNCIONARIO ||--o{ ASO_ATESTADO : "possui"
+    ASO_ATESTADO ||--o{ EXAME_CLINICO : "contem"
+    FUNCIONARIO ||--o{ ACIDENTE_TRABALHO : "envolvido_em"
+    COMPRA_EPI ||--o{ ITEM_COMPRA_EPI : "contem"
+    CATALOGO_EPI ||--o{ ITEM_COMPRA_EPI : "comprado_como"
+    ITEM_COMPRA_EPI ||--o{ DISTRIBUICAO_EPI : "fracionado_em"
+    EMPRESA ||--o{ DISTRIBUICAO_EPI : "recebe"
