@@ -1,5 +1,13 @@
 import { defineConfig } from 'vite'
+import { resolve } from 'path'
 
 export default defineConfig({
-  // Configurações vazias (Tailwind v3 é rodado pelo PostCSS, não precisa de plugin no Vite)
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        dashboard: resolve(__dirname, 'dashboard.html'),
+      },
+    },
+  },
 })
