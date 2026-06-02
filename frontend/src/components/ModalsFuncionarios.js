@@ -1,6 +1,7 @@
 import { appState, cartState, INITIAL_STATE, saveState, getFuncionarioCount } from '../store/state.js';
 import { updateStats } from '../store/stats.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
+import { api } from '../services/api.js';
 
 export const renderFormFuncionario = (id = null) => {
   const func = id ? appState.funcionarios.find(f => f.id == id) : null;
@@ -214,7 +215,7 @@ export const renderDetailsFuncionario = (id) => {
   `;
 };
 
-export const handleSaveFuncionario = (event) => {
+export const handleSaveFuncionario = async (event) => {
   event.preventDefault();
   const form = event.target;
   const id = form.querySelector('#func-id')?.value;
@@ -233,27 +234,35 @@ export const handleSaveFuncionario = (event) => {
     empresaNome: empresa ? empresa.nome : 'N/A'
   };
 
-  if (id) {
-    const index = appState.funcionarios.findIndex(f => f.id == id);
-    if (index !== -1) {
-      appState.funcionarios[index] = { ...appState.funcionarios[index], ...dados };
+  try {
+    if (id) {
+      const updated = await api.updateFuncionario(id, dados);
+      const index = appState.funcionarios.findIndex(f => f.id == id);
+      if (index !== -1) {
+        appState.funcionarios[index] = updated;
+      }
+    } else {
+      const created = await api.createFuncionario(dados);
+      appState.funcionarios.push(created);
     }
-  } else {
-    appState.funcionarios.push({
-      id: Date.now(),
-      ...dados
-    });
-  }
 
-  updateStats();
-  closeModal();
-  window.navigateTo('funcionarios');
+    updateStats();
+    closeModal();
+    window.navigateTo('funcionarios');
+  } catch (err) {
+    alert('Erro ao salvar funcionário: ' + err.message);
+  }
 };
 
-export const handleDeleteFuncionario = (id) => {
+export const handleDeleteFuncionario = async (id) => {
   if (confirm('Tem certeza que deseja excluir este funcionário?')) {
-    appState.funcionarios = appState.funcionarios.filter(f => f.id != id);
-    updateStats();
-    window.navigateTo('funcionarios');
+    try {
+      await api.deleteFuncionario(id);
+      appState.funcionarios = appState.funcionarios.filter(f => f.id != id);
+      updateStats();
+      window.navigateTo('funcionarios');
+    } catch (err) {
+      alert('Erro ao excluir funcionário: ' + err.message);
+    }
   }
 };

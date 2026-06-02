@@ -4,8 +4,8 @@ export const createItemCompraEpiSchema = object({
     body: object({
         idCompra: string().uuid("ID de compra inválido").optional().nullable(),
         idEpi: string().uuid("ID de EPI inválido").optional().nullable(),
-        quantidadeComprada: number({ required_error: "Quantidade comprada é obrigatória" }),
-        precoPraticado: number({ required_error: "Preço praticado é obrigatório" }),
+        quantidadeComprada: number({ message: "Quantidade comprada é obrigatória" }),
+        precoPraticado: number({ message: "Preço praticado é obrigatório" }),
     })
 });
 

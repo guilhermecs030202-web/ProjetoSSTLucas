@@ -16,6 +16,15 @@ export class Empresa {
     @Column({ name: "cnpj", type: "varchar" })
     cnpj: string;
 
+    @Column({ name: "setor", type: "varchar", nullable: true })
+    setor: string;
+
+    @Column({ name: "status", type: "varchar", nullable: true })
+    status: string;
+
+    @Column({ name: "data_criacao", type: "varchar", nullable: true })
+    dataCriacao: string;
+
     @OneToMany(() => Cargo, cargo => cargo.empresa)
     cargos: Cargo[];
 

@@ -26,7 +26,7 @@ export class MembroCipaController {
 
     static async getById(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const membro = await membroCipaRepository.findOne({ where: { idMembro: id }, relations: ["empresa"] });
             if (!membro) return res.status(404).json({ message: "Membro CIPA não encontrado" });
             return res.json(membro);
@@ -37,7 +37,7 @@ export class MembroCipaController {
 
     static async update(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const membro = await membroCipaRepository.findOneBy({ idMembro: id });
             if (!membro) return res.status(404).json({ message: "Membro CIPA não encontrado" });
             membroCipaRepository.merge(membro, req.body);
@@ -50,7 +50,7 @@ export class MembroCipaController {
 
     static async delete(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const resultado = await membroCipaRepository.delete(id);
             if (resultado.affected === 0) return res.status(404).json({ message: "Membro CIPA não encontrado" });
             return res.status(204).send();

@@ -17,7 +17,7 @@ export class AcidenteTrabalhoController {
 
     static async getAll(req: Request, res: Response) {
         try {
-            const acidentes = await acidenteRepository.find({ relations: ["funcionario"] });
+            const acidentes = await acidenteRepository.find({ relations: ["funcionario", "funcionario.empresa"] });
             return res.json(acidentes);
         } catch (error) {
             return res.status(500).json({ message: "Erro ao buscar acidentes", error });
@@ -26,8 +26,8 @@ export class AcidenteTrabalhoController {
 
     static async getById(req: Request, res: Response) {
         try {
-            const { id } = req.params;
-            const acidente = await acidenteRepository.findOne({ where: { idAcidente: id }, relations: ["funcionario"] });
+            const { id } = req.params as any;
+            const acidente = await acidenteRepository.findOne({ where: { idAcidente: id }, relations: ["funcionario", "funcionario.empresa"] });
             if (!acidente) return res.status(404).json({ message: "Acidente de Trabalho não encontrado" });
             return res.json(acidente);
         } catch (error) {
@@ -37,7 +37,7 @@ export class AcidenteTrabalhoController {
 
     static async update(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const acidente = await acidenteRepository.findOneBy({ idAcidente: id });
             if (!acidente) return res.status(404).json({ message: "Acidente de Trabalho não encontrado" });
             acidenteRepository.merge(acidente, req.body);
@@ -50,7 +50,7 @@ export class AcidenteTrabalhoController {
 
     static async delete(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const resultado = await acidenteRepository.delete(id);
             if (resultado.affected === 0) return res.status(404).json({ message: "Acidente de Trabalho não encontrado" });
             return res.status(204).send();

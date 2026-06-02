@@ -21,6 +21,9 @@ export class Treinamento {
     @Column({ name: "observacoes", type: "varchar", nullable: true })
     observacoes: string;
 
+    @Column({ name: "instrutor", type: "varchar", nullable: true })
+    instrutor: string;
+
     @Column({ name: "id_funcionario", type: "varchar", nullable: true })
     idFuncionario: string;
 

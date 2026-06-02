@@ -26,7 +26,7 @@ export class CatalogoEpiController {
 
     static async getById(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const catalogo = await catalogoEpiRepository.findOneBy({ idEpi: id });
             if (!catalogo) return res.status(404).json({ message: "Catálogo não encontrado" });
             return res.json(catalogo);
@@ -37,7 +37,7 @@ export class CatalogoEpiController {
 
     static async update(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const catalogo = await catalogoEpiRepository.findOneBy({ idEpi: id });
             if (!catalogo) return res.status(404).json({ message: "Catálogo não encontrado" });
             catalogoEpiRepository.merge(catalogo, req.body);
@@ -50,7 +50,7 @@ export class CatalogoEpiController {
 
     static async delete(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const resultado = await catalogoEpiRepository.delete(id);
             if (resultado.affected === 0) return res.status(404).json({ message: "Catálogo não encontrado" });
             return res.status(204).send();

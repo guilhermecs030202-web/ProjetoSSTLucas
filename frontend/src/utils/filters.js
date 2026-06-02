@@ -2,9 +2,11 @@ import { appState, cartState, INITIAL_STATE, saveState, getFuncionarioCount } fr
 
 export const handleSearch = (event, pageId) => {
   appState.filters[pageId] = event.target.value.toLowerCase();
-  navigateTo(pageId);
+  
+  // Recarrega a view localmente de forma síncrona, sem chamar a API (forceFetch = false)
+  navigateTo(pageId, false);
 
-  // Reposicionar o cursor no final do input após o re-render
+  // Reposicionar o cursor no final do input após a troca do HTML
   setTimeout(() => {
     const input = document.querySelector(`input[data-search-page="${pageId}"]`);
     if (input) {

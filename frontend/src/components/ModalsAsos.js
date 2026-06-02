@@ -2,6 +2,7 @@ import { appState, cartState, INITIAL_STATE, saveState, getFuncionarioCount } fr
 import { calculateStatus } from '../utils/status.js';
 import { updateStats } from '../store/stats.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
+import { api } from '../services/api.js';
 
 export const renderFormAso = (id = null) => {
   const aso = id ? appState.asos.find(a => a.id == id) : null;
@@ -260,11 +261,16 @@ export const renderDetailsAso = (id) => {
   `;
 };
 
-export const handleDeleteASO = (id) => {
+export const handleDeleteASO = async (id) => {
   if (confirm('Tem certeza que deseja excluir este ASO?')) {
-    appState.asos = appState.asos.filter(a => a.id != id);
-    updateStats();
-    window.navigateTo('asos');
+    try {
+      await api.deleteAso(id);
+      appState.asos = appState.asos.filter(a => a.id != id);
+      updateStats();
+      window.navigateTo('asos');
+    } catch (err) {
+      alert('Erro ao excluir ASO: ' + err.message);
+    }
   }
 };
 
@@ -313,7 +319,7 @@ export const addExameAso = () => {
   document.getElementById('aso-exame-nome').focus();
 };
 
-export const handleSaveAso = (e) => {
+export const handleSaveAso = async (e) => {
   e.preventDefault();
   const id = document.getElementById('aso-id')?.value;
   const funcId = document.getElementById('aso-funcionario').value;
@@ -321,7 +327,7 @@ export const handleSaveAso = (e) => {
 
   const dados = {
     tipo: document.getElementById('aso-tipo').value,
-    funcionarioId: parseInt(funcId),
+    funcionarioId: funcId,
     funcionarioNome: func ? func.nome : 'N/A',
     empresaNome: func ? func.empresaNome : 'N/A',
     status: calculateStatus(document.getElementById('aso-vencimento').value),
@@ -335,19 +341,22 @@ export const handleSaveAso = (e) => {
     observacoes: document.getElementById('aso-obs').value
   };
 
-  if (id) {
-    const index = appState.asos.findIndex(a => a.id == id);
-    if (index !== -1) {
-      appState.asos[index] = { ...appState.asos[index], ...dados };
+  try {
+    if (id) {
+      const updated = await api.updateAso(id, dados);
+      const index = appState.asos.findIndex(a => a.id == id);
+      if (index !== -1) {
+        appState.asos[index] = updated;
+      }
+    } else {
+      const created = await api.createAso(dados);
+      appState.asos.push(created);
     }
-  } else {
-    appState.asos.push({
-      id: Date.now(),
-      ...dados
-    });
-  }
 
-  updateStats();
-  closeModal();
-  window.navigateTo('asos');
+    updateStats();
+    closeModal();
+    window.navigateTo('asos');
+  } catch (err) {
+    alert('Erro ao salvar ASO: ' + err.message);
+  }
 };

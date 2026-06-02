@@ -17,7 +17,7 @@ export class AsoController {
 
     static async getAll(req: Request, res: Response) {
         try {
-            const asos = await asoRepository.find({ relations: ["funcionario", "examesClinicos"] });
+            const asos = await asoRepository.find({ relations: ["funcionario", "funcionario.empresa", "examesClinicos"] });
             return res.json(asos);
         } catch (error) {
             return res.status(500).json({ message: "Erro ao buscar ASOs", error });
@@ -26,10 +26,10 @@ export class AsoController {
 
     static async getById(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const aso = await asoRepository.findOne({
                 where: { idAso: id },
-                relations: ["funcionario", "examesClinicos"]
+                relations: ["funcionario", "funcionario.empresa", "examesClinicos"]
             });
             if (!aso) {
                 return res.status(404).json({ message: "ASO não encontrado" });
@@ -42,7 +42,7 @@ export class AsoController {
 
     static async update(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const aso = await asoRepository.findOneBy({ idAso: id });
             if (!aso) {
                 return res.status(404).json({ message: "ASO não encontrado" });
@@ -57,7 +57,7 @@ export class AsoController {
 
     static async delete(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const resultado = await asoRepository.delete(id);
             if (resultado.affected === 0) {
                 return res.status(404).json({ message: "ASO não encontrado" });

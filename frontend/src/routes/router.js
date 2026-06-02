@@ -1,4 +1,5 @@
 import { appState } from '../store/state.js';
+import { updateStats } from '../store/stats.js';
 import { renderDashboard } from '../pages/Dashboard.js';
 import { renderEmpresas } from '../pages/Empresas.js';
 import { renderFuncionarios } from '../pages/Funcionarios.js';
@@ -8,6 +9,9 @@ import { renderAsos } from '../pages/Asos.js';
 import { renderEpis } from '../pages/Epis.js';
 import { renderAcidentes } from '../pages/Acidentes.js';
 import { initDashboardCharts, destroyAllCharts } from '../charts.js';
+import { api } from '../services/api.js';
+import { renderTableSkeleton } from '../utils/skeletons.js';
+
 
 // Seleção de elementos com fallback
 const getElements = () => ({
@@ -15,8 +19,8 @@ const getElements = () => ({
   navItems: document.querySelectorAll('.nav-item')
 });
 
-export const navigateTo = (pageId) => {
-  console.log(`[Router] Navegando para: ${pageId}`);
+export const navigateTo = async (pageId, forceFetch = true) => {
+  console.log(`[Router] Navegando para: ${pageId} (fetch: ${forceFetch})`);
   window.currentPage = pageId;
 
   const { mainContent, navItems } = getElements();
@@ -36,8 +40,41 @@ export const navigateTo = (pageId) => {
   // 1. Atualizar o conteúdo principal
   try {
     let html = '';
+
+    // Render Skeleton and Fetch Data for Table Pages
+    const skeletonMap = {
+      empresas: { t: 'Empresas', s: 'Gerencie as empresas cadastradas no sistema.', c: 6 },
+      funcionarios: { t: 'Funcionários', s: 'Gerencie os colaboradores das empresas.', c: 6 },
+      documentos: { t: 'Documentos', s: 'Gerencie os programas e laudos das empresas.', c: 5 },
+      treinamentos: { t: 'Treinamentos', s: 'Acompanhe as capacitações e certificações obrigatórias.', c: 6 },
+      asos: { t: 'ASOs', s: 'Gerencie os atestados de saúde ocupacional.', c: 7 },
+      epis: { t: 'Gestão de EPIs', s: 'Acompanhe compras, estoque e distribuição de equipamentos.', c: 5 },
+      acidentes: { t: 'Acidentes', s: 'Registro e acompanhamento de ocorrências.', c: 6 }
+    };
+
+    if (forceFetch && skeletonMap[pageId]) {
+      mainContent.innerHTML = renderTableSkeleton(skeletonMap[pageId].t, skeletonMap[pageId].s, skeletonMap[pageId].c, 5);
+      try {
+        switch (pageId) {
+          case 'empresas': appState.empresas = await api.getEmpresas(); break;
+          case 'funcionarios': appState.funcionarios = await api.getFuncionarios(); break;
+          case 'documentos': appState.documentos = await api.getDocumentos(); break;
+          case 'treinamentos': appState.treinamentos = await api.getTreinamentos(); break;
+          case 'asos': appState.asos = await api.getAsos(); break;
+          case 'epis': 
+            appState.comprasEpi = await api.getEpis(); 
+            appState.empresas = await api.getEmpresas(); 
+            break;
+          case 'acidentes': appState.acidentes = await api.getAcidentes(); break;
+        }
+      } catch (err) {
+        console.warn(`[Router] Usando mock fallback para ${pageId} após falha na API:`, err.message);
+      }
+    }
+
     switch (pageId) {
       case 'dashboard':
+        await updateStats();
         html = renderDashboard();
         break;
       case 'empresas':

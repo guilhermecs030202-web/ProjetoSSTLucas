@@ -26,7 +26,7 @@ export class DocumentoSstController {
 
     static async getById(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const doc = await documentoSstRepository.findOne({ where: { idDocumento: id }, relations: ["empresa"] });
             if (!doc) return res.status(404).json({ message: "Documento SST não encontrado" });
             return res.json(doc);
@@ -37,7 +37,7 @@ export class DocumentoSstController {
 
     static async update(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const doc = await documentoSstRepository.findOneBy({ idDocumento: id });
             if (!doc) return res.status(404).json({ message: "Documento SST não encontrado" });
             documentoSstRepository.merge(doc, req.body);
@@ -50,7 +50,7 @@ export class DocumentoSstController {
 
     static async delete(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const resultado = await documentoSstRepository.delete(id);
             if (resultado.affected === 0) return res.status(404).json({ message: "Documento SST não encontrado" });
             return res.status(204).send();

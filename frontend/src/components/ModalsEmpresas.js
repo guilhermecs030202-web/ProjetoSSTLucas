@@ -1,6 +1,7 @@
 import { appState, cartState, INITIAL_STATE, saveState, getFuncionarioCount } from '../store/state.js';
 import { updateStats } from '../store/stats.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
+import { api } from '../services/api.js';
 
 export const renderFormEmpresa = (id = null) => {
   const empresa = id ? appState.empresas.find(e => e.id == id) : null;
@@ -19,7 +20,7 @@ export const renderFormEmpresa = (id = null) => {
       </div>
       <div>
         <label class="block text-sm font-semibold text-slate-700 mb-1">CNPJ</label>
-        <input type="text" id="cnpj" value="${empresa ? empresa.cnpj : ''}" required placeholder="00.000.000/0000-00" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-900">
+        <input type="text" id="cnpj" value="${empresa ? empresa.cnpj : ''}" required placeholder="00.000.000/0000-00" maxlength="18" oninput="window.maskCNPJ(event)" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-900">
       </div>
       <div>
         <label class="block text-sm font-semibold text-slate-700 mb-1">Setor de Atuação</label>
@@ -153,7 +154,7 @@ export const renderDetailsEmpresa = (id) => {
   `;
 };
 
-export const handleSaveEmpresa = (event) => {
+export const handleSaveEmpresa = async (event) => {
   event.preventDefault();
   const form = event.target;
   const id = form.querySelector('#emp-id')?.value;
@@ -165,28 +166,35 @@ export const handleSaveEmpresa = (event) => {
     status: 'Ativa'
   };
 
-  if (id) {
-    const index = appState.empresas.findIndex(e => e.id == id);
-    if (index !== -1) {
-      appState.empresas[index] = { ...appState.empresas[index], ...dados };
+  try {
+    if (id) {
+      const updated = await api.updateEmpresa(id, dados);
+      const index = appState.empresas.findIndex(e => e.id == id);
+      if (index !== -1) {
+        appState.empresas[index] = updated;
+      }
+    } else {
+      const created = await api.createEmpresa(dados);
+      appState.empresas.push(created);
     }
-  } else {
-    appState.empresas.push({
-      id: Date.now(),
-      dataCriacao: new Date().toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
-      ...dados
-    });
-  }
 
-  updateStats();
-  closeModal();
-  window.navigateTo('empresas');
+    updateStats();
+    closeModal();
+    window.navigateTo('empresas');
+  } catch (err) {
+    alert('Erro ao salvar empresa: ' + err.message);
+  }
 };
 
-export const handleDeleteEmpresa = (id) => {
+export const handleDeleteEmpresa = async (id) => {
   if (confirm('Tem certeza que deseja excluir esta empresa?')) {
-    appState.empresas = appState.empresas.filter(emp => emp.id != id);
-    updateStats();
-    window.navigateTo('empresas');
+    try {
+      await api.deleteEmpresa(id);
+      appState.empresas = appState.empresas.filter(emp => emp.id != id);
+      updateStats();
+      window.navigateTo('empresas');
+    } catch (err) {
+      alert('Erro ao excluir empresa: ' + err.message);
+    }
   }
 };

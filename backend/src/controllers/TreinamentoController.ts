@@ -17,7 +17,7 @@ export class TreinamentoController {
 
     static async getAll(req: Request, res: Response) {
         try {
-            const treinamentos = await treinamentoRepository.find({ relations: ["funcionario"] });
+            const treinamentos = await treinamentoRepository.find({ relations: ["funcionario", "funcionario.empresa"] });
             return res.json(treinamentos);
         } catch (error) {
             return res.status(500).json({ message: "Erro ao buscar treinamentos", error });
@@ -26,8 +26,8 @@ export class TreinamentoController {
 
     static async getById(req: Request, res: Response) {
         try {
-            const { id } = req.params;
-            const treino = await treinamentoRepository.findOne({ where: { idTreinamento: id }, relations: ["funcionario"] });
+            const { id } = req.params as any;
+            const treino = await treinamentoRepository.findOne({ where: { idTreinamento: id }, relations: ["funcionario", "funcionario.empresa"] });
             if (!treino) return res.status(404).json({ message: "Treinamento não encontrado" });
             return res.json(treino);
         } catch (error) {
@@ -37,7 +37,7 @@ export class TreinamentoController {
 
     static async update(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const treino = await treinamentoRepository.findOneBy({ idTreinamento: id });
             if (!treino) return res.status(404).json({ message: "Treinamento não encontrado" });
             treinamentoRepository.merge(treino, req.body);
@@ -50,7 +50,7 @@ export class TreinamentoController {
 
     static async delete(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const resultado = await treinamentoRepository.delete(id);
             if (resultado.affected === 0) return res.status(404).json({ message: "Treinamento não encontrado" });
             return res.status(204).send();

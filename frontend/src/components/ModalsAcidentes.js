@@ -1,6 +1,7 @@
 import { appState, cartState, INITIAL_STATE, saveState, getFuncionarioCount } from '../store/state.js';
 import { updateStats } from '../store/stats.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
+import { api } from '../services/api.js';
 
 export const renderFormAcidente = (id = null) => {
   const acid = id ? appState.acidentes.find(a => a.id == id) : null;
@@ -317,7 +318,7 @@ export const renderDetailsAcidente = (id) => {
   `;
 };
 
-export const handleSaveAcidente = (e) => {
+export const handleSaveAcidente = async (e) => {
   e.preventDefault();
   const id = document.getElementById('acid-id')?.value;
   const funcId = document.getElementById('acid-funcionario').value;
@@ -326,7 +327,7 @@ export const handleSaveAcidente = (e) => {
   const dados = {
     data: document.getElementById('acid-data').value,
     hora: document.getElementById('acid-hora').value,
-    funcionarioId: parseInt(funcId),
+    funcionarioId: funcId,
     funcionarioNome: func ? func.nome : 'N/A',
     empresaNome: func ? func.empresaNome : 'N/A',
     tipo: document.getElementById('acid-tipo').value,
@@ -345,27 +346,35 @@ export const handleSaveAcidente = (e) => {
     testemunhaTelefone: document.getElementById('acid-testemunha-tel').value
   };
 
-  if (id) {
-    const index = appState.acidentes.findIndex(a => a.id == id);
-    if (index !== -1) {
-      appState.acidentes[index] = { ...appState.acidentes[index], ...dados };
+  try {
+    if (id) {
+      const updated = await api.updateAcidente(id, dados);
+      const index = appState.acidentes.findIndex(a => a.id == id);
+      if (index !== -1) {
+        appState.acidentes[index] = updated;
+      }
+    } else {
+      const created = await api.createAcidente(dados);
+      appState.acidentes.push(created);
     }
-  } else {
-    appState.acidentes.push({
-      id: Date.now(),
-      ...dados
-    });
-  }
 
-  updateStats();
-  closeModal();
-  window.navigateTo('acidentes');
+    updateStats();
+    closeModal();
+    window.navigateTo('acidentes');
+  } catch (err) {
+    alert('Erro ao salvar acidente: ' + err.message);
+  }
 };
 
-export const handleDeleteAcidente = (id) => {
+export const handleDeleteAcidente = async (id) => {
   if (confirm('Tem certeza que deseja excluir este registro de acidente?')) {
-    appState.acidentes = appState.acidentes.filter(a => a.id != id);
-    updateStats();
-    window.navigateTo('acidentes');
+    try {
+      await api.deleteAcidente(id);
+      appState.acidentes = appState.acidentes.filter(a => a.id != id);
+      updateStats();
+      window.navigateTo('acidentes');
+    } catch (err) {
+      alert('Erro ao excluir acidente: ' + err.message);
+    }
   }
 };

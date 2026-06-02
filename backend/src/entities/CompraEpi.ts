@@ -12,6 +12,9 @@ export class CompraEpi {
     @Column({ name: "valor_total_compra", type: "float" })
     valorTotalCompra: number;
 
+    @Column({ name: "nf", type: "varchar", nullable: true })
+    nf: string;
+
     @OneToMany(() => ItemCompraEpi, itemCompraEpi => itemCompraEpi.compra)
     itensCompra: ItemCompraEpi[];
 }

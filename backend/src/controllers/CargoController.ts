@@ -26,7 +26,7 @@ export class CargoController {
 
     static async getById(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const cargo = await cargoRepository.findOne({ where: { idCargo: id }, relations: ["empresa"] });
             if (!cargo) return res.status(404).json({ message: "Cargo não encontrado" });
             return res.json(cargo);
@@ -37,7 +37,7 @@ export class CargoController {
 
     static async update(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const cargo = await cargoRepository.findOneBy({ idCargo: id });
             if (!cargo) return res.status(404).json({ message: "Cargo não encontrado" });
             cargoRepository.merge(cargo, req.body);
@@ -50,7 +50,7 @@ export class CargoController {
 
     static async delete(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const resultado = await cargoRepository.delete(id);
             if (resultado.affected === 0) return res.status(404).json({ message: "Cargo não encontrado" });
             return res.status(204).send();

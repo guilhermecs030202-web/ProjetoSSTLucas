@@ -26,7 +26,7 @@ export class FuncionarioController {
 
     static async getById(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const funcionario = await funcionarioRepository.findOne({
                 where: { idFuncionario: id },
                 relations: ["empresa", "cargo"]
@@ -42,7 +42,7 @@ export class FuncionarioController {
 
     static async update(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const funcionario = await funcionarioRepository.findOneBy({ idFuncionario: id });
             if (!funcionario) {
                 return res.status(404).json({ message: "Funcionário não encontrado" });
@@ -57,7 +57,7 @@ export class FuncionarioController {
 
     static async delete(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const resultado = await funcionarioRepository.delete(id);
             if (resultado.affected === 0) {
                 return res.status(404).json({ message: "Funcionário não encontrado" });

@@ -2,10 +2,10 @@ import { object, string, number } from "zod";
 
 export const createCatalogoEpiSchema = object({
     body: object({
-        nomeEquipamento: string({ required_error: "Nome do equipamento é obrigatório" }),
-        ca: string({ required_error: "CA é obrigatório" }),
-        descricaoMaterial: string({ required_error: "Descrição do material é obrigatória" }),
-        precoUnitario: number({ required_error: "Preço unitário é obrigatório" }),
+        nomeEquipamento: string({ message: "Nome do equipamento é obrigatório" }),
+        ca: string({ message: "CA é obrigatório" }),
+        descricaoMaterial: string({ message: "Descrição do material é obrigatória" }),
+        precoUnitario: number({ message: "Preço unitário é obrigatório" }),
     })
 });
 

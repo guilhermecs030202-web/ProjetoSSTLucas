@@ -12,8 +12,9 @@ import { renderFormAso, renderDetailsAso, handleSaveAso, handleDeleteASO, update
 import { renderFormEpi, renderDetailsEpi, openEpiModal, addItemToCart, removeItemFromCart, addDistribution, removeDistribution, openEstoqueModal, addManualItemToEstoque, updateEstoqueQtd, deleteItemEstoque, syncEstoqueFromNf, handleSaveCompraEpi, handleDeleteCompraEpi } from './components/ModalsEpis.js';
 import { renderFormAcidente, renderDetailsAcidente, handleSaveAcidente, handleDeleteAcidente } from './components/ModalsAcidentes.js';
 
-// Utils (Filters)
+// Utils (Filters and Formatters)
 import { handleSearch } from './utils/filters.js';
+import { maskCNPJ } from './utils/formatters.js';
 
 // Pages (Views)
 import { handleSectorFilter } from './pages/Empresas.js';
@@ -91,13 +92,14 @@ window.renderDetailsAcidente = renderDetailsAcidente;
 window.handleSaveAcidente = handleSaveAcidente;
 window.handleDeleteAcidente = handleDeleteAcidente;
 
-// Filters
+// Filters & Formatters
 window.handleSearch = handleSearch;
 window.handleSectorFilter = handleSectorFilter;
 window.handleTreinamentoStatusFilter = handleTreinamentoStatusFilter;
 window.handleAsoAptidaoFilter = handleAsoAptidaoFilter;
 window.handleEpiDateFilter = handleEpiDateFilter;
 window.handleAcidenteStatusFilter = handleAcidenteStatusFilter;
+window.maskCNPJ = maskCNPJ;
 
 // Router
 window.navigateTo = navigateTo;
@@ -120,20 +122,24 @@ if (logoutBtn) {
 }
 
 // Initial calculations and rendering
-try {
-  console.log('[Dashboard] Initializing application...');
-  updateStats();
-  
-  // Garantir que o DOM está pronto antes de navegar
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => navigateTo('dashboard'));
-  } else {
-    navigateTo('dashboard');
+const init = async () => {
+  try {
+    console.log('[Dashboard] Initializing application...');
+    await updateStats();
+    
+    // Garantir que o DOM está pronto antes de navegar
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => navigateTo('dashboard'));
+    } else {
+      navigateTo('dashboard');
+    }
+  } catch (err) {
+    console.error('[Dashboard] Critical error during initialization:', err);
+    const container = document.getElementById('page-container');
+    if (container) {
+      container.innerHTML = `<div class="p-10 text-red-500 font-bold">Erro crítico na inicialização. Verifique o console.</div>`;
+    }
   }
-} catch (err) {
-  console.error('[Dashboard] Critical error during initialization:', err);
-  const container = document.getElementById('page-container');
-  if (container) {
-    container.innerHTML = `<div class="p-10 text-red-500 font-bold">Erro crítico na inicialização. Verifique o console.</div>`;
-  }
-}
+};
+
+init();

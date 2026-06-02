@@ -24,7 +24,7 @@ export const AppDataSource = new DataSource({
     username: process.env.DB_USER || "sst_user",
     password: process.env.DB_PASSWORD || "sst_password",
     database: process.env.DB_NAME || "sst_db",
-    synchronize: true, // Auto-create tables in development
+    synchronize: false, // Auto-create tables in development
     logging: false,
     entities: [
         Empresa,

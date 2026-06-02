@@ -26,7 +26,7 @@ export class ItemCompraEpiController {
 
     static async getById(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const item = await itemCompraEpiRepository.findOne({ where: { idItemCompra: id }, relations: ["compra", "epi"] });
             if (!item) return res.status(404).json({ message: "Item não encontrado" });
             return res.json(item);
@@ -37,7 +37,7 @@ export class ItemCompraEpiController {
 
     static async update(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const item = await itemCompraEpiRepository.findOneBy({ idItemCompra: id });
             if (!item) return res.status(404).json({ message: "Item não encontrado" });
             itemCompraEpiRepository.merge(item, req.body);
@@ -50,7 +50,7 @@ export class ItemCompraEpiController {
 
     static async delete(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const resultado = await itemCompraEpiRepository.delete(id);
             if (resultado.affected === 0) return res.status(404).json({ message: "Item não encontrado" });
             return res.status(204).send();

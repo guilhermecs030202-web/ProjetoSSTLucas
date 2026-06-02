@@ -2,8 +2,8 @@ import { object, string } from "zod";
 
 export const createExameClinicoSchema = object({
     body: object({
-        nomeExame: string({ required_error: "Nome do exame é obrigatório" }),
-        dataRealizacao: string({ required_error: "Data de realização é obrigatória" }),
+        nomeExame: string({ message: "Nome do exame é obrigatório" }),
+        dataRealizacao: string({ message: "Data de realização é obrigatória" }),
         idAso: string().uuid("ID de ASO inválido").optional().nullable(),
     })
 });

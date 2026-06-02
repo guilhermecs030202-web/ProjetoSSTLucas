@@ -2,6 +2,7 @@ import { appState, cartState, INITIAL_STATE, saveState, getFuncionarioCount } fr
 import { calculateStatus } from '../utils/status.js';
 import { updateStats } from '../store/stats.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
+import { api } from '../services/api.js';
 
 export const renderFormTreinamento = (id = null) => {
   const trei = id ? appState.treinamentos.find(t => t.id == id) : null;
@@ -213,15 +214,20 @@ export const renderDetailsTreinamento = (id) => {
   `;
 };
 
-export const handleDeleteTreinamento = (id) => {
+export const handleDeleteTreinamento = async (id) => {
   if (confirm('Tem certeza que deseja excluir este treinamento?')) {
-    appState.treinamentos = appState.treinamentos.filter(t => t.id != id);
-    updateStats();
-    window.navigateTo('treinamentos');
+    try {
+      await api.deleteTreinamento(id);
+      appState.treinamentos = appState.treinamentos.filter(t => t.id != id);
+      updateStats();
+      window.navigateTo('treinamentos');
+    } catch (err) {
+      alert('Erro ao excluir treinamento: ' + err.message);
+    }
   }
 };
 
-export const handleSaveTreinamento = (e) => {
+export const handleSaveTreinamento = async (e) => {
   e.preventDefault();
   const id = document.getElementById('trei-id')?.value;
   const sigla = document.getElementById('trei-novo-tipo-sigla').value;
@@ -231,7 +237,7 @@ export const handleSaveTreinamento = (e) => {
 
   const dados = {
     tipo: tipo,
-    funcionarioId: parseInt(funcId),
+    funcionarioId: funcId,
     funcionarioNome: func ? func.nome : 'N/A',
     empresaNome: func ? func.empresaNome : 'N/A',
     status: calculateStatus(document.getElementById('trei-vencimento').value),
@@ -241,21 +247,24 @@ export const handleSaveTreinamento = (e) => {
     observacoes: document.getElementById('trei-obs').value
   };
 
-  if (id) {
-    const index = appState.treinamentos.findIndex(t => t.id == id);
-    if (index !== -1) {
-      appState.treinamentos[index] = { ...appState.treinamentos[index], ...dados };
+  try {
+    if (id) {
+      const updated = await api.updateTreinamento(id, dados);
+      const index = appState.treinamentos.findIndex(t => t.id == id);
+      if (index !== -1) {
+        appState.treinamentos[index] = updated;
+      }
+    } else {
+      const created = await api.createTreinamento(dados);
+      appState.treinamentos.push(created);
     }
-  } else {
-    appState.treinamentos.push({
-      id: Date.now(),
-      ...dados
-    });
-  }
 
-  updateStats();
-  closeModal();
-  window.navigateTo('treinamentos');
+    updateStats();
+    closeModal();
+    window.navigateTo('treinamentos');
+  } catch (err) {
+    alert('Erro ao salvar treinamento: ' + err.message);
+  }
 };
 
 export const addTipoTreinamento = () => {

@@ -22,6 +22,12 @@ export class AsoAtestado {
     @Column({ name: "riscos_ocupacionais", type: "varchar" })
     riscosOcupacionais: string;
 
+    @Column({ name: "observacoes", type: "text", nullable: true })
+    observacoes: string;
+
+    @Column({ name: "exames", type: "text", nullable: true })
+    exames: string;
+
     @Column({ name: "id_funcionario", type: "varchar", nullable: true })
     idFuncionario: string;
 

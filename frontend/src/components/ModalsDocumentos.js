@@ -3,6 +3,7 @@ import { formatDate } from '../utils/formatters.js';
 import { calculateStatus } from '../utils/status.js';
 import { updateStats } from '../store/stats.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
+import { api } from '../services/api.js';
 
 export const renderFormDocumento = (id = null) => {
   const doc = id ? appState.documentos.find(d => d.id == id) : null;
@@ -162,15 +163,20 @@ export const renderDetailsDocumento = (id) => {
   `;
 };
 
-export const handleDeleteDocumento = (id) => {
+export const handleDeleteDocumento = async (id) => {
   if (confirm('Tem certeza que deseja excluir este documento?')) {
-    appState.documentos = appState.documentos.filter(d => d.id != id);
-    updateStats();
-    window.navigateTo('documentos');
+    try {
+      await api.deleteDocumento(id);
+      appState.documentos = appState.documentos.filter(d => d.id != id);
+      updateStats();
+      window.navigateTo('documentos');
+    } catch (err) {
+      alert('Erro ao excluir documento: ' + err.message);
+    }
   }
 };
 
-export const handleSaveDocumento = (e) => {
+export const handleSaveDocumento = async (e) => {
   e.preventDefault();
   const id = document.getElementById('doc-id')?.value;
   const sigla = document.getElementById('doc-novo-tipo-sigla').value;
@@ -182,7 +188,7 @@ export const handleSaveDocumento = (e) => {
   const dados = {
     tipo: tipo,
     nome: desc || tipo,
-    empresaId: parseInt(empresaId),
+    empresaId: empresaId,
     empresaNome: empresa ? empresa.nome : 'Empresa não encontrada',
     status: calculateStatus(document.getElementById('doc-revisao').value),
     dataEmissao: document.getElementById('doc-elaboracao').value,
@@ -190,21 +196,24 @@ export const handleSaveDocumento = (e) => {
     observacoes: document.getElementById('doc-obs').value
   };
 
-  if (id) {
-    const index = appState.documentos.findIndex(d => d.id == id);
-    if (index !== -1) {
-      appState.documentos[index] = { ...appState.documentos[index], ...dados };
+  try {
+    if (id) {
+      const updated = await api.updateDocumento(id, dados);
+      const index = appState.documentos.findIndex(d => d.id == id);
+      if (index !== -1) {
+        appState.documentos[index] = updated;
+      }
+    } else {
+      const created = await api.createDocumento(dados);
+      appState.documentos.push(created);
     }
-  } else {
-    appState.documentos.push({
-      id: Date.now(),
-      ...dados
-    });
-  }
 
-  updateStats();
-  closeModal();
-  window.navigateTo('documentos');
+    updateStats();
+    closeModal();
+    window.navigateTo('documentos');
+  } catch (err) {
+    alert('Erro ao salvar documento: ' + err.message);
+  }
 };
 
 export const addTipoDocumento = () => {

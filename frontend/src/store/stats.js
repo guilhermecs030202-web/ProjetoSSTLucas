@@ -2,7 +2,9 @@ import { appState, cartState, INITIAL_STATE, saveState, getFuncionarioCount } fr
 import { formatDate } from '../utils/formatters.js';
 import { calculateStatus } from '../utils/status.js';
 
-export const updateStats = () => {
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+
+const runLocalStats = () => {
   // ===== 1. Recalcular status baseado nas datas atuais =====
   if (appState.documentos) {
     appState.documentos.forEach(d => d.status = calculateStatus(d.dataVencimento));
@@ -184,6 +186,30 @@ export const updateStats = () => {
     return parseAlertDate(a.data) - parseAlertDate(b.data);
   });
   appState.alertas = alertas;
+};
 
-  saveState();
+export const updateStats = async () => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 1500);
+
+  try {
+    const response = await fetch(`${BASE_URL}/stats`, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    appState.stats = data.stats;
+    appState.pendTipo = data.pendTipo;
+    appState.acidentesMes = data.acidentesMes;
+    appState.rankPend = data.rankPend;
+    appState.statusEmp = data.statusEmp;
+    appState.alertas = data.alertas;
+  } catch (error) {
+    console.warn("Falha ao buscar estatísticas do banco de dados. Executando cálculo local:", error);
+    runLocalStats();
+  } finally {
+    saveState();
+  }
 };

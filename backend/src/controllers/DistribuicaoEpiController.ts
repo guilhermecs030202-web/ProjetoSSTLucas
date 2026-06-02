@@ -26,7 +26,7 @@ export class DistribuicaoEpiController {
 
     static async getById(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const distribuicao = await distribuicaoEpiRepository.findOne({ where: { idDistribuicao: id }, relations: ["itemCompra", "empresa"] });
             if (!distribuicao) return res.status(404).json({ message: "Distribuição não encontrada" });
             return res.json(distribuicao);
@@ -37,7 +37,7 @@ export class DistribuicaoEpiController {
 
     static async update(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const distribuicao = await distribuicaoEpiRepository.findOneBy({ idDistribuicao: id });
             if (!distribuicao) return res.status(404).json({ message: "Distribuição não encontrada" });
             distribuicaoEpiRepository.merge(distribuicao, req.body);
@@ -50,7 +50,7 @@ export class DistribuicaoEpiController {
 
     static async delete(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const resultado = await distribuicaoEpiRepository.delete(id);
             if (resultado.affected === 0) return res.status(404).json({ message: "Distribuição não encontrada" });
             return res.status(204).send();

@@ -4,7 +4,7 @@ export const createDistribuicaoEpiSchema = object({
     body: object({
         idItemCompra: string().uuid("ID do item de compra inválido").optional().nullable(),
         idEmpresa: string().uuid("ID de empresa inválido").optional().nullable(),
-        quantidadeDestinada: number({ required_error: "Quantidade destinada é obrigatória" }),
+        quantidadeDestinada: number({ message: "Quantidade destinada é obrigatória" }),
     })
 });
 

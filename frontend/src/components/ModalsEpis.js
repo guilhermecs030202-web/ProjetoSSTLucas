@@ -1,6 +1,7 @@
 import { appState, cartState, INITIAL_STATE, saveState, getFuncionarioCount } from '../store/state.js';
 import { updateStats } from '../store/stats.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
+import { api } from '../services/api.js';
 
 const updateEpiModalUI = () => {
   // Salvar valores atuais da NF antes de re-renderizar
@@ -607,7 +608,7 @@ export const renderDetailsEpi = (id) => {
   `;
 };
 
-export const handleSaveCompraEpi = (e) => {
+export const handleSaveCompraEpi = async (e) => {
   e.preventDefault();
   
   const nf = document.getElementById('epi-nf').value;
@@ -633,57 +634,64 @@ export const handleSaveCompraEpi = (e) => {
     if (!confirmEstoque) return;
   }
 
-  const novaCompra = {
-    id: cartState.id || Date.now(),
+  const novaCompraData = {
     nf: nf,
     data: data,
     valorTotal: cartState.valorTotal,
     itens: cartState.items
   };
 
-  if (cartState.id) {
-    const index = appState.comprasEpi.findIndex(c => c.id == cartState.id);
-    if (index !== -1) {
-      appState.comprasEpi[index] = novaCompra;
-    }
-  } else {
-    appState.comprasEpi.push(novaCompra);
-    
-    // Adicionar saldos ao estoque consolidado apenas no novo registro para evitar duplicatas em edições
-    itensComEstoque.forEach(item => {
-      const totalDistribuido = (item.distribuicoes || []).reduce((acc, d) => acc + d.quantidade, 0);
-      const saldo = item.quantidade - totalDistribuido;
+  try {
+    if (cartState.id) {
+      await api.updateEpi(cartState.id, novaCompraData);
+    } else {
+      await api.createEpi(novaCompraData);
       
-      if (saldo > 0) {
-        const existing = appState.estoque.find(i => 
-          i.descricao.toLowerCase() === item.descricao.toLowerCase() && 
-          i.ca === item.ca && 
-          i.tipo === item.tipo
-        );
+      // Adicionar saldos ao estoque consolidado apenas no novo registro para evitar duplicatas em edições
+      itensComEstoque.forEach(item => {
+        const totalDistribuido = (item.distribuicoes || []).reduce((acc, d) => acc + d.quantidade, 0);
+        const saldo = item.quantidade - totalDistribuido;
         
-        if (existing) {
-          existing.quantidade += saldo;
-        } else {
-          appState.estoque.push({
-            tipo: item.tipo,
-            descricao: item.descricao,
-            ca: item.ca,
-            quantidade: saldo
-          });
+        if (saldo > 0) {
+          const existing = appState.estoque.find(i => 
+            i.descricao.toLowerCase() === item.descricao.toLowerCase() && 
+            i.ca === item.ca && 
+            i.tipo === item.tipo
+          );
+          
+          if (existing) {
+            existing.quantidade += saldo;
+          } else {
+            appState.estoque.push({
+              tipo: item.tipo,
+              descricao: item.descricao,
+              ca: item.ca,
+              quantidade: saldo
+            });
+          }
         }
-      }
-    });
-  }
+      });
+      saveState();
+    }
 
-  updateStats();
-  closeModal();
-  window.navigateTo('epis');
+    updateStats();
+    closeModal();
+    window.navigateTo('epis');
+  } catch (err) {
+    console.error('Erro ao salvar compra de EPI:', err);
+    alert('Erro ao salvar compra de EPI no banco de dados.');
+  }
 };
 
-export const handleDeleteCompraEpi = (id) => {
+export const handleDeleteCompraEpi = async (id) => {
   if (confirm('Tem certeza que deseja excluir esta nota fiscal?')) {
-    appState.comprasEpi = appState.comprasEpi.filter(c => c.id != id);
-    updateStats();
-    window.navigateTo('epis');
+    try {
+      await api.deleteEpi(id);
+      updateStats();
+      window.navigateTo('epis');
+    } catch (err) {
+      console.error('Erro ao deletar compra de EPI:', err);
+      alert('Erro ao deletar compra de EPI no banco de dados.');
+    }
   }
 };

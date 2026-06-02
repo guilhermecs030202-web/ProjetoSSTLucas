@@ -26,7 +26,7 @@ export class ExameClinicoController {
 
     static async getById(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const exame = await exameClinicoRepository.findOne({ where: { idExame: id }, relations: ["aso"] });
             if (!exame) return res.status(404).json({ message: "Exame Clínico não encontrado" });
             return res.json(exame);
@@ -37,7 +37,7 @@ export class ExameClinicoController {
 
     static async update(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const exame = await exameClinicoRepository.findOneBy({ idExame: id });
             if (!exame) return res.status(404).json({ message: "Exame Clínico não encontrado" });
             exameClinicoRepository.merge(exame, req.body);
@@ -50,7 +50,7 @@ export class ExameClinicoController {
 
     static async delete(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const { id } = req.params as any;
             const resultado = await exameClinicoRepository.delete(id);
             if (resultado.affected === 0) return res.status(404).json({ message: "Exame Clínico não encontrado" });
             return res.status(204).send();
