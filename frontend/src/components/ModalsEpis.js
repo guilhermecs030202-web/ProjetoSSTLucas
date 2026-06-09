@@ -2,6 +2,8 @@ import { appState, cartState, INITIAL_STATE, saveState, getFuncionarioCount } fr
 import { updateStats } from '../store/stats.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
 import { api } from '../services/api.js';
+import { showToast } from '../utils/toast.js';
+import { showConfirmDialog } from '../utils/confirmDialog.js';
 
 const updateEpiModalUI = () => {
   // Salvar valores atuais da NF antes de re-renderizar
@@ -47,7 +49,7 @@ export const addItemToCart = () => {
   const valorUnit = parseFloat(document.getElementById('epi-item-valor').value.replace(',', '.')) || 0;
 
   if (!desc || qtd <= 0 || valorUnit <= 0) {
-    alert('Preencha a descrição, quantidade e valor unitário corretamente.');
+    showToast('Preencha a descrição, quantidade e valor unitário corretamente.', 'warning');
     return;
   }
 
@@ -96,7 +98,7 @@ export const addDistribution = (itemIndex) => {
   const qtd = parseInt(input.value) || 0;
 
   if (!empresaId || qtd <= 0) {
-    alert('Selecione uma empresa e informe uma quantidade válida.');
+    showToast('Selecione uma empresa e informe uma quantidade válida.', 'warning');
     return;
   }
 
@@ -104,7 +106,7 @@ export const addDistribution = (itemIndex) => {
   const totalDistribuido = item.distribuicoes.reduce((acc, d) => acc + d.quantidade, 0);
 
   if (totalDistribuido + qtd > item.quantidade) {
-    alert('A quantidade distribuída não pode ser maior que a quantidade total comprada.');
+    showToast('A quantidade distribuída não pode ser maior que a quantidade total comprada.', 'warning');
     return;
   }
 
@@ -135,7 +137,7 @@ export const addManualItemToEstoque = () => {
   const qtd = parseInt(document.getElementById('est-item-qtd').value) || 0;
 
   if (!desc || qtd <= 0) {
-    alert('Informe a descrição e uma quantidade válida.');
+    showToast('Informe a descrição e uma quantidade válida.', 'warning');
     return;
   }
 
@@ -162,8 +164,8 @@ export const updateEstoqueQtd = (index, delta) => {
   window.openEstoqueModal();
 };
 
-export const deleteItemEstoque = (index) => {
-  if (confirm('Remover este item do controle de estoque?')) {
+export const deleteItemEstoque = async (index) => {
+  if (await showConfirmDialog('Remover este item do controle de estoque?')) {
     appState.estoque.splice(index, 1);
     saveState();
     window.openEstoqueModal();
@@ -193,7 +195,7 @@ export const syncEstoqueFromNf = () => {
       }
     });
   });
-  alert('Funcionalidade de sincronização automática pendente de refinamento para evitar duplicatas. Por favor, adicione os itens manualmente ou use os saldos das NFs listadas.');
+  showToast('Funcionalidade de sincronização automática pendente de refinamento para evitar duplicatas. Por favor, adicione os itens manualmente ou use os saldos das NFs listadas.', 'info');
 };
 
 export const renderEstoqueModal = () => {
@@ -615,12 +617,12 @@ export const handleSaveCompraEpi = async (e) => {
   const data = document.getElementById('epi-data').value;
 
   if (!nf || !data) {
-    alert('Informe o número da nota fiscal e a data da compra.');
+    showToast('Informe o número da nota fiscal e a data da compra.', 'warning');
     return;
   }
 
   if (cartState.items.length === 0) {
-    alert('Adicione ao menos um item ao carrinho.');
+    showToast('Adicione ao menos um item ao carrinho.', 'warning');
     return;
   }
 
@@ -630,7 +632,7 @@ export const handleSaveCompraEpi = async (e) => {
   });
 
   if (itensComEstoque.length > 0) {
-    const confirmEstoque = confirm('Alguns itens possuem quantidades não distribuídas que serão enviadas para o Estoque Geral. Deseja continuar?');
+    const confirmEstoque = await showConfirmDialog('Alguns itens possuem quantidades não distribuídas que serão enviadas para o Estoque Geral. Deseja continuar?', 'Atenção');
     if (!confirmEstoque) return;
   }
 
@@ -679,19 +681,19 @@ export const handleSaveCompraEpi = async (e) => {
     window.navigateTo('epis');
   } catch (err) {
     console.error('Erro ao salvar compra de EPI:', err);
-    alert('Erro ao salvar compra de EPI no banco de dados.');
+    showToast('Erro ao salvar compra de EPI no banco de dados: ' + err.message, 'error');
   }
 };
 
 export const handleDeleteCompraEpi = async (id) => {
-  if (confirm('Tem certeza que deseja excluir esta nota fiscal?')) {
+  if (await showConfirmDialog('Tem certeza que deseja excluir esta nota fiscal?')) {
     try {
       await api.deleteEpi(id);
       updateStats();
       window.navigateTo('epis');
     } catch (err) {
       console.error('Erro ao deletar compra de EPI:', err);
-      alert('Erro ao deletar compra de EPI no banco de dados.');
+      showToast('Erro ao deletar compra de EPI no banco de dados: ' + err.message, 'error');
     }
   }
 };

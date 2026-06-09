@@ -18,6 +18,18 @@ export class DocumentoSst {
     @Column({ name: "status_documento", type: "varchar" })
     statusDocumento: string;
 
+    @Column({ name: "nome_arquivo", type: "varchar", nullable: true })
+    nomeArquivo: string;
+
+    @Column({ name: "mime_type", type: "varchar", nullable: true })
+    mimeType: string;
+
+    @Column({ name: "tamanho_arquivo", type: "int", nullable: true })
+    tamanhoArquivo: number;
+
+    @Column({ name: "caminho_arquivo", type: "varchar", nullable: true })
+    caminhoArquivo: string;
+
     @Column({ name: "id_empresa", type: "varchar", nullable: true })
     idEmpresa: string;
 

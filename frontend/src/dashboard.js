@@ -109,7 +109,7 @@ window.navigateTo = navigateTo;
 // ==========================================
 
 // Global error handler for debugging
-window.onerror = function(message, source, lineno, colno, error) {
+window.onerror = function (message, source, lineno, colno, error) {
   console.error('[Global Error]', { message, source, lineno, colno, error });
   return false;
 };
@@ -126,7 +126,7 @@ const init = async () => {
   try {
     console.log('[Dashboard] Initializing application...');
     await updateStats();
-    
+
     // Garantir que o DOM está pronto antes de navegar
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => navigateTo('dashboard'));

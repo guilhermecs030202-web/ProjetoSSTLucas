@@ -18,7 +18,7 @@ export class Treinamento {
     @Column({ name: "status_treinamento", type: "varchar" })
     statusTreinamento: string;
 
-    @Column({ name: "observacoes", type: "varchar", nullable: true })
+    @Column({ name: "observacoes", type: "text", nullable: true })
     observacoes: string;
 
     @Column({ name: "instrutor", type: "varchar", nullable: true })
@@ -26,6 +26,18 @@ export class Treinamento {
 
     @Column({ name: "id_funcionario", type: "varchar", nullable: true })
     idFuncionario: string;
+
+    @Column({ name: "nome_arquivo", type: "varchar", nullable: true })
+    nomeArquivo: string;
+
+    @Column({ name: "mime_type", type: "varchar", nullable: true })
+    mimeType: string;
+
+    @Column({ name: "tamanho_arquivo", type: "int", nullable: true })
+    tamanhoArquivo: number;
+
+    @Column({ name: "caminho_arquivo", type: "varchar", nullable: true })
+    caminhoArquivo: string;
 
     @ManyToOne(() => Funcionario, funcionario => funcionario.treinamentos)
     @JoinColumn({ name: "id_funcionario" })

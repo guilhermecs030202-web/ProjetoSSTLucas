@@ -61,9 +61,9 @@ export const navigateTo = async (pageId, forceFetch = true) => {
           case 'documentos': appState.documentos = await api.getDocumentos(); break;
           case 'treinamentos': appState.treinamentos = await api.getTreinamentos(); break;
           case 'asos': appState.asos = await api.getAsos(); break;
-          case 'epis': 
-            appState.comprasEpi = await api.getEpis(); 
-            appState.empresas = await api.getEmpresas(); 
+          case 'epis':
+            appState.comprasEpi = await api.getEpis();
+            appState.empresas = await api.getEmpresas();
             break;
           case 'acidentes': appState.acidentes = await api.getAcidentes(); break;
         }

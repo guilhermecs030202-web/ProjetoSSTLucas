@@ -35,6 +35,9 @@ export class Funcionario {
     @Column({ name: "id_cargo", type: "varchar", nullable: true })
     idCargo: string;
 
+    @Column({ name: "is_cipa", type: "boolean", default: false })
+    isCipa: boolean;
+
     @ManyToOne(() => Cargo, cargo => cargo.funcionarios)
     @JoinColumn({ name: "id_cargo" })
     cargo: Cargo;

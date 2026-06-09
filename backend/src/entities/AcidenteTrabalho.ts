@@ -63,6 +63,18 @@ export class AcidenteTrabalho {
     @Column({ name: "id_funcionario", type: "varchar", nullable: true })
     idFuncionario: string;
 
+    @Column({ name: "nome_arquivo", type: "varchar", nullable: true })
+    nomeArquivo: string;
+
+    @Column({ name: "mime_type", type: "varchar", nullable: true })
+    mimeType: string;
+
+    @Column({ name: "tamanho_arquivo", type: "int", nullable: true })
+    tamanhoArquivo: number;
+
+    @Column({ name: "caminho_arquivo", type: "varchar", nullable: true })
+    caminhoArquivo: string;
+
     @ManyToOne(() => Funcionario, funcionario => funcionario.acidentes)
     @JoinColumn({ name: "id_funcionario" })
     funcionario: Funcionario;

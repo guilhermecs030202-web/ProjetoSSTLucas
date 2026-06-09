@@ -1,16 +1,6 @@
 import './style.css'
-
-// ==========================================
-// 1. O CONCEITO DE "ESTADO" (STATE)
-// ==========================================
-// Como ainda não temos um banco de dados conectado, guardamos 
-// o e-mail e a senha em "variáveis de estado". Enquanto a página 
-// não recarregar (F5), essas informações ficam na memória RAM do navegador.
-let bancoDeDadosSimulado = {
-  emailAtual: 'admin@sst.com.br',
-  senhaAtual: 'admin123'
-};
-
+import { api } from './services/api.js'
+import { showToast } from './utils/toast.js'
 
 // ==========================================
 // 2. LÓGICA DE LOGIN
@@ -18,26 +8,30 @@ let bancoDeDadosSimulado = {
 const loginForm = document.getElementById('login-form');
 
 if (loginForm) {
-  loginForm.addEventListener('submit', (event) => {
+  loginForm.addEventListener('submit', async (event) => {
     event.preventDefault(); // Impede o F5 da tela
 
     const emailDigitado = document.getElementById('email').value;
     const senhaDigitada = document.getElementById('password').value;
 
-    // Verificamos com os dados "salvos" no nosso estado
-    if (emailDigitado === bancoDeDadosSimulado.emailAtual && senhaDigitada === bancoDeDadosSimulado.senhaAtual) {
-      // O conceito de Navegação:
-      // Se o login der certo, usamos a API do navegador para abrir a página do sistema.
-      window.location.href = '/dashboard.html';
-    } else {
-      alert('E-mail ou senha incorretos.');
+    try {
+      // O sistema consulta o banco de dados para localizar o usuário informado
+      const response = await api.login(emailDigitado, senhaDigitada);
+      if (response && response.user) {
+        // Se o login e a senha forem válidos, permitir acesso
+        window.location.href = '/dashboard.html';
+      } else {
+        showToast('E-mail ou senha incorretos.', 'error');
+      }
+    } catch (err) {
+      showToast('E-mail ou senha incorretos.', 'error');
     }
   });
 }
 
 
 // ==========================================
-// 3. LÓGICA DO MODAL (ALTERAR CREDENCIAIS)
+// 3. LÓGICA DO MODAL (ALTERAR CREDENCIAIS NO BANCO)
 // ==========================================
 
 // Pescamos os elementos do HTML
@@ -64,7 +58,7 @@ if (openModalBtn && closeModalBtn && modal && changeCredentialsForm) {
   });
 
   // Quando submeter o formulário de Alteração
-  changeCredentialsForm.addEventListener('submit', (event) => {
+  changeCredentialsForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
     // 1. Pegar os dados de confirmação (Atuais)
@@ -75,26 +69,29 @@ if (openModalBtn && closeModalBtn && modal && changeCredentialsForm) {
     const newEmailDigitado = document.getElementById('new-email').value;
     const newPasswordDigitada = document.getElementById('new-password').value;
 
-    // 3. Validar a identidade: O que ele diz que é o atual, realmente bate com o banco de dados?
-    if (currentEmailDigitado === bancoDeDadosSimulado.emailAtual && currentPasswordDigitada === bancoDeDadosSimulado.senhaAtual) {
+    try {
+      // 3. Validar a identidade: enviar credenciais atuais e novas para o backend
+      await api.changeCredentials(
+        currentEmailDigitado,
+        currentPasswordDigitada,
+        newEmailDigitado,
+        newPasswordDigitada
+      );
       
-      // SUCESSO! A identidade foi confirmada. 
-      // Atualizamos o nosso "Banco de Dados" em memória com os novos valores.
-      bancoDeDadosSimulado.emailAtual = newEmailDigitado;
-      bancoDeDadosSimulado.senhaAtual = newPasswordDigitada;
-      
-      alert('Credenciais alteradas com sucesso! Agora você deve usar o novo email e senha para o Login.');
+      showToast('Credenciais alteradas com sucesso! Agora você deve usar o novo email e senha para o Login.', 'success');
       
       // Escondemos o modal
       modal.classList.add('hidden');
       changeCredentialsForm.reset();
       
       // Dica para a interface do usuário: limpar o formulário principal de login
-      loginForm.reset();
+      if (loginForm) {
+        loginForm.reset();
+      }
       
-    } else {
-      // FALHA: Alguém tentou mudar a senha sem saber a senha atual
-      alert('Atenção: O E-mail ou Senha ATUAL que você informou estão incorretos.');
+    } catch (err) {
+      // FALHA: Alguém tentou mudar a senha sem saber a senha atual ou erro do servidor
+      showToast('Atenção: O E-mail ou Senha ATUAL que você informou estão incorretos.', 'error');
     }
   });
 }

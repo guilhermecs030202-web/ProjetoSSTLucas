@@ -1,7 +1,9 @@
 import { appState, cartState, INITIAL_STATE, saveState, getFuncionarioCount } from '../store/state.js';
 import { updateStats } from '../store/stats.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
-import { api } from '../services/api.js';
+import { api, BASE_URL } from '../services/api.js';
+import { showToast } from '../utils/toast.js';
+import { showConfirmDialog } from '../utils/confirmDialog.js';
 
 export const renderFormAcidente = (id = null) => {
   const acid = id ? appState.acidentes.find(a => a.id == id) : null;
@@ -126,18 +128,22 @@ export const renderFormAcidente = (id = null) => {
         </div>
       </div>
 
-      <!-- Seção 4: Testemunhas -->
+      <!-- Seção 4: Testemunhas e Anexos -->
       <div class="bg-amber-50/50 p-4 rounded-xl border border-amber-100/60">
-        <p class="text-[10px] font-bold text-amber-800 uppercase tracking-wider mb-3">4. Testemunhas</p>
-        <div class="grid grid-cols-2 gap-4">
+        <p class="text-[10px] font-bold text-amber-800 uppercase tracking-wider mb-3">4. Testemunhas e Anexos</p>
+        <div class="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-1">Nome</label>
+            <label class="block text-sm font-semibold text-slate-700 mb-1">Nome da Testemunha</label>
             <input type="text" id="acid-testemunha-nome" value="${acid ? acid.testemunhaNome || '' : ''}" placeholder="Nome completo" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 text-sm">
           </div>
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-1">Telefone</label>
+            <label class="block text-sm font-semibold text-slate-700 mb-1">Telefone da Testemunha</label>
             <input type="text" id="acid-testemunha-tel" value="${acid ? acid.testemunhaTelefone || '' : ''}" placeholder="(00) 00000-0000" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 text-sm">
           </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Anexo da CAT ou Laudo (PDF)</label>
+          <input type="file" id="acid-anexo" accept=".pdf" class="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 transition-all cursor-pointer">
         </div>
       </div>
 
@@ -304,14 +310,19 @@ export const renderDetailsAcidente = (id) => {
             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
           </div>
           <div>
-            <h4 class="font-bold text-lg">Comunicação de Acidente (CAT)</h4>
-            <p class="text-red-100 text-xs">Documento pronto para download em PDF</p>
+            <h4 class="font-bold text-lg">${acid.nomeArquivo || 'Comunicação de Acidente (CAT)'}</h4>
+            <p class="text-red-100 text-xs">${acid.temArquivo ? 'Documento anexado em PDF' : 'Nenhum documento anexado'}</p>
           </div>
         </div>
-        <button class="bg-white text-red-600 px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-red-50 transition-colors flex items-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-          Baixar PDF
-        </button>
+        ${acid.temArquivo ? `
+        <div class="flex gap-2">
+            <button onclick="window.viewAcidente('${acid.id}')" class="bg-red-700 text-white hover:bg-red-800 px-4 py-2.5 rounded-xl font-bold transition-colors shadow-sm">
+            Visualizar
+            </button>
+            <button onclick="window.downloadAcidente('${acid.id}')" class="bg-white text-red-600 hover:bg-red-50 px-4 py-2.5 rounded-xl font-bold transition-colors shadow-sm">
+            Baixar
+            </button>
+        </div>` : '<p class="text-sm text-red-200 italic">Arquivo não enviado</p>'}
       </div>
 
     </div>
@@ -323,6 +334,9 @@ export const handleSaveAcidente = async (e) => {
   const id = document.getElementById('acid-id')?.value;
   const funcId = document.getElementById('acid-funcionario').value;
   const func = appState.funcionarios.find(f => f.id == funcId);
+
+  const fileInput = document.getElementById('acid-anexo');
+  const arquivo = fileInput && fileInput.files.length > 0 ? fileInput.files[0] : null;
 
   const dados = {
     data: document.getElementById('acid-data').value,
@@ -343,7 +357,8 @@ export const handleSaveAcidente = async (e) => {
     medico: document.getElementById('acid-medico').value,
     crm: document.getElementById('acid-crm').value,
     testemunhaNome: document.getElementById('acid-testemunha-nome').value,
-    testemunhaTelefone: document.getElementById('acid-testemunha-tel').value
+    testemunhaTelefone: document.getElementById('acid-testemunha-tel').value,
+    arquivo: arquivo
   };
 
   try {
@@ -362,19 +377,27 @@ export const handleSaveAcidente = async (e) => {
     closeModal();
     window.navigateTo('acidentes');
   } catch (err) {
-    alert('Erro ao salvar acidente: ' + err.message);
+    showToast('Erro ao salvar acidente: ' + err.message, 'error');
   }
 };
 
 export const handleDeleteAcidente = async (id) => {
-  if (confirm('Tem certeza que deseja excluir este registro de acidente?')) {
+  if (await showConfirmDialog('Tem certeza que deseja excluir este registro de acidente?')) {
     try {
       await api.deleteAcidente(id);
       appState.acidentes = appState.acidentes.filter(a => a.id != id);
       updateStats();
       window.navigateTo('acidentes');
     } catch (err) {
-      alert('Erro ao excluir acidente: ' + err.message);
+      showToast('Erro ao excluir acidente: ' + err.message, 'error');
     }
   }
+};
+
+window.viewAcidente = (id) => {
+  window.open(`${BASE_URL}/acidentes/${id}/view`, '_blank');
+};
+
+window.downloadAcidente = (id) => {
+  window.location.href = `${BASE_URL}/acidentes/${id}/download`;
 };

@@ -3,7 +3,9 @@ import { formatDate } from '../utils/formatters.js';
 import { calculateStatus } from '../utils/status.js';
 import { updateStats } from '../store/stats.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
-import { api } from '../services/api.js';
+import { api, BASE_URL } from '../services/api.js';
+import { showToast } from '../utils/toast.js';
+import { showConfirmDialog } from '../utils/confirmDialog.js';
 
 export const renderFormDocumento = (id = null) => {
   const doc = id ? appState.documentos.find(d => d.id == id) : null;
@@ -150,13 +152,19 @@ export const renderDetailsDocumento = (id) => {
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
           </div>
           <div>
-            <p class="font-bold text-lg">${doc.tipo}_${doc.empresaNome.replace(/\s+/g, '_')}.pdf</p>
-            <p class="text-indigo-200 text-sm">PDF</p>
+            <p class="font-bold text-lg">${doc.nomeArquivo || doc.tipo + '_' + doc.empresaNome.replace(/\s+/g, '_') + '.pdf'}</p>
+            <p class="text-indigo-200 text-sm">${doc.temArquivo ? 'PDF anexado' : 'Sem anexo'}</p>
           </div>
         </div>
-        <button class="bg-white text-indigo-600 hover:bg-indigo-50 px-5 py-2.5 rounded-xl font-bold transition-colors shadow-sm">
-          Baixar Arquivo
-        </button>
+        ${doc.temArquivo ? `
+        <div class="flex gap-2">
+            <button onclick="window.viewDocumento('${doc.id}')" class="bg-indigo-700 text-white hover:bg-indigo-800 px-5 py-2.5 rounded-xl font-bold transition-colors shadow-sm">
+            Visualizar
+            </button>
+            <button onclick="window.downloadDocumento('${doc.id}')" class="bg-white text-indigo-600 hover:bg-indigo-50 px-5 py-2.5 rounded-xl font-bold transition-colors shadow-sm">
+            Baixar
+            </button>
+        </div>` : '<p class="text-sm text-indigo-200 italic">Arquivo não enviado</p>'}
       </div>
 
     </div>
@@ -164,14 +172,14 @@ export const renderDetailsDocumento = (id) => {
 };
 
 export const handleDeleteDocumento = async (id) => {
-  if (confirm('Tem certeza que deseja excluir este documento?')) {
+  if (await showConfirmDialog('Tem certeza que deseja excluir este documento?')) {
     try {
       await api.deleteDocumento(id);
       appState.documentos = appState.documentos.filter(d => d.id != id);
       updateStats();
       window.navigateTo('documentos');
     } catch (err) {
-      alert('Erro ao excluir documento: ' + err.message);
+      showToast('Erro ao excluir documento: ' + err.message, 'error');
     }
   }
 };
@@ -185,6 +193,9 @@ export const handleSaveDocumento = async (e) => {
   const empresaId = document.getElementById('doc-empresa').value;
   const empresa = appState.empresas.find(emp => emp.id == empresaId);
 
+  const fileInput = document.getElementById('doc-anexo');
+  const arquivo = fileInput && fileInput.files.length > 0 ? fileInput.files[0] : null;
+
   const dados = {
     tipo: tipo,
     nome: desc || tipo,
@@ -193,7 +204,8 @@ export const handleSaveDocumento = async (e) => {
     status: calculateStatus(document.getElementById('doc-revisao').value),
     dataEmissao: document.getElementById('doc-elaboracao').value,
     dataVencimento: document.getElementById('doc-revisao').value,
-    observacoes: document.getElementById('doc-obs').value
+    observacoes: document.getElementById('doc-obs').value,
+    arquivo: arquivo
   };
 
   try {
@@ -212,7 +224,7 @@ export const handleSaveDocumento = async (e) => {
     closeModal();
     window.navigateTo('documentos');
   } catch (err) {
-    alert('Erro ao salvar documento: ' + err.message);
+    showToast('Erro ao salvar documento: ' + err.message, 'error');
   }
 };
 
@@ -222,7 +234,7 @@ export const addTipoDocumento = () => {
   const select = document.getElementById('doc-tipo');
 
   if (!sigla) {
-    alert('Por favor, informe ao menos a sigla do novo tipo.');
+    showToast('Por favor, informe ao menos a sigla do novo tipo.', 'warning');
     return;
   }
 
@@ -242,4 +254,12 @@ export const addTipoDocumento = () => {
   document.getElementById('novo-tipo-doc').classList.add('hidden');
   document.getElementById('doc-novo-tipo-sigla').value = '';
   document.getElementById('doc-novo-tipo-desc').value = '';
+};
+
+window.viewDocumento = (id) => {
+  window.open(`${BASE_URL}/documentos-sst/${id}/view`, '_blank');
+};
+
+window.downloadDocumento = (id) => {
+  window.location.href = `${BASE_URL}/documentos-sst/${id}/download`;
 };

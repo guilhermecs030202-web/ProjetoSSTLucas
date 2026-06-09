@@ -3,6 +3,8 @@ import { calculateStatus } from '../utils/status.js';
 import { updateStats } from '../store/stats.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
 import { api } from '../services/api.js';
+import { showToast } from '../utils/toast.js';
+import { showConfirmDialog } from '../utils/confirmDialog.js';
 
 export const renderFormAso = (id = null) => {
   const aso = id ? appState.asos.find(a => a.id == id) : null;
@@ -262,14 +264,14 @@ export const renderDetailsAso = (id) => {
 };
 
 export const handleDeleteASO = async (id) => {
-  if (confirm('Tem certeza que deseja excluir este ASO?')) {
+  if (await showConfirmDialog('Tem certeza que deseja excluir este ASO?')) {
     try {
       await api.deleteAso(id);
       appState.asos = appState.asos.filter(a => a.id != id);
       updateStats();
       window.navigateTo('asos');
     } catch (err) {
-      alert('Erro ao excluir ASO: ' + err.message);
+      showToast('Erro ao excluir ASO: ' + err.message, 'error');
     }
   }
 };
@@ -297,7 +299,7 @@ export const addExameAso = () => {
   const list = document.getElementById('aso-exames-list');
 
   if (!nome) {
-    alert('Por favor, informe o nome do exame.');
+    showToast('Por favor, informe o nome do exame.', 'warning');
     return;
   }
 
@@ -357,6 +359,6 @@ export const handleSaveAso = async (e) => {
     closeModal();
     window.navigateTo('asos');
   } catch (err) {
-    alert('Erro ao salvar ASO: ' + err.message);
+    showToast('Erro ao salvar ASO: ' + err.message, 'error');
   }
 };

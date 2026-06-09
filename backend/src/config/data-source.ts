@@ -14,6 +14,7 @@ import { CompraEpi } from "../entities/CompraEpi";
 import { CatalogoEpi } from "../entities/CatalogoEpi";
 import { ItemCompraEpi } from "../entities/ItemCompraEpi";
 import { DistribuicaoEpi } from "../entities/DistribuicaoEpi";
+import { Usuario } from "../entities/Usuario";
 
 dotenv.config();
 
@@ -39,7 +40,8 @@ export const AppDataSource = new DataSource({
         CompraEpi,
         CatalogoEpi,
         ItemCompraEpi,
-        DistribuicaoEpi
+        DistribuicaoEpi,
+        Usuario
     ],
     migrations: [],
     subscribers: [],

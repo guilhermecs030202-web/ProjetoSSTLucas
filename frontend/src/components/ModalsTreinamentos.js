@@ -2,7 +2,9 @@ import { appState, cartState, INITIAL_STATE, saveState, getFuncionarioCount } fr
 import { calculateStatus } from '../utils/status.js';
 import { updateStats } from '../store/stats.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
-import { api } from '../services/api.js';
+import { api, BASE_URL } from '../services/api.js';
+import { showToast } from '../utils/toast.js';
+import { showConfirmDialog } from '../utils/confirmDialog.js';
 
 export const renderFormTreinamento = (id = null) => {
   const trei = id ? appState.treinamentos.find(t => t.id == id) : null;
@@ -201,13 +203,19 @@ export const renderDetailsTreinamento = (id) => {
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
           </div>
           <div>
-            <p class="font-bold text-lg">Certificado_${trei.tipo.replace(/\s+/g, '_')}_${trei.funcionarioNome.replace(/\s+/g, '')}.pdf</p>
-            <p class="text-purple-200 text-sm">PDF (MocK)</p>
+            <p class="font-bold text-lg">${trei.nomeArquivo || 'Certificado_' + trei.tipo.replace(/\s+/g, '_') + '.pdf'}</p>
+            <p class="text-purple-200 text-sm">${trei.temArquivo ? 'Certificado anexado' : 'Sem certificado'}</p>
           </div>
         </div>
-        <button class="bg-white text-purple-600 hover:bg-purple-50 px-5 py-2.5 rounded-xl font-bold transition-colors shadow-sm">
-          Baixar Certificado
-        </button>
+        ${trei.temArquivo ? `
+        <div class="flex gap-2">
+            <button onclick="window.viewTreinamento('${trei.id}')" class="bg-purple-700 text-white hover:bg-purple-800 px-4 py-2.5 rounded-xl font-bold transition-colors shadow-sm">
+            Visualizar
+            </button>
+            <button onclick="window.downloadTreinamento('${trei.id}')" class="bg-white text-purple-600 hover:bg-purple-50 px-4 py-2.5 rounded-xl font-bold transition-colors shadow-sm">
+            Baixar
+            </button>
+        </div>` : '<p class="text-sm text-purple-200 italic">Arquivo não enviado</p>'}
       </div>
 
     </div>
@@ -215,14 +223,14 @@ export const renderDetailsTreinamento = (id) => {
 };
 
 export const handleDeleteTreinamento = async (id) => {
-  if (confirm('Tem certeza que deseja excluir este treinamento?')) {
+  if (await showConfirmDialog('Tem certeza que deseja excluir este treinamento?')) {
     try {
       await api.deleteTreinamento(id);
       appState.treinamentos = appState.treinamentos.filter(t => t.id != id);
       updateStats();
       window.navigateTo('treinamentos');
     } catch (err) {
-      alert('Erro ao excluir treinamento: ' + err.message);
+      showToast('Erro ao excluir treinamento: ' + err.message, 'error');
     }
   }
 };
@@ -235,6 +243,9 @@ export const handleSaveTreinamento = async (e) => {
   const funcId = document.getElementById('trei-funcionario').value;
   const func = appState.funcionarios.find(f => f.id == funcId);
 
+  const fileInput = document.getElementById('trei-anexo');
+  const arquivo = fileInput && fileInput.files.length > 0 ? fileInput.files[0] : null;
+
   const dados = {
     tipo: tipo,
     funcionarioId: funcId,
@@ -244,7 +255,8 @@ export const handleSaveTreinamento = async (e) => {
     dataRealizacao: document.getElementById('trei-realizacao').value,
     dataVencimento: document.getElementById('trei-vencimento').value,
     instrutor: document.getElementById('trei-instrutor').value || 'Não informado',
-    observacoes: document.getElementById('trei-obs').value
+    observacoes: document.getElementById('trei-obs').value,
+    arquivo: arquivo
   };
 
   try {
@@ -263,7 +275,7 @@ export const handleSaveTreinamento = async (e) => {
     closeModal();
     window.navigateTo('treinamentos');
   } catch (err) {
-    alert('Erro ao salvar treinamento: ' + err.message);
+    showToast('Erro ao salvar treinamento: ' + err.message, 'error');
   }
 };
 
@@ -273,7 +285,7 @@ export const addTipoTreinamento = () => {
   const select = document.getElementById('trei-tipo');
 
   if (!sigla) {
-    alert('Por favor, informe ao menos a sigla do novo tipo.');
+    showToast('Por favor, informe ao menos a sigla do novo tipo.', 'warning');
     return;
   }
 
@@ -293,4 +305,12 @@ export const addTipoTreinamento = () => {
   document.getElementById('novo-tipo-treinamento').classList.add('hidden');
   document.getElementById('trei-novo-tipo-sigla').value = '';
   document.getElementById('trei-novo-tipo-desc').value = '';
+};
+
+window.viewTreinamento = (id) => {
+  window.open(`${BASE_URL}/treinamentos/${id}/view`, '_blank');
+};
+
+window.downloadTreinamento = (id) => {
+  window.location.href = `${BASE_URL}/treinamentos/${id}/download`;
 };

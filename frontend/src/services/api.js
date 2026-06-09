@@ -206,7 +206,8 @@ export const api = {
       dataAdmissao: item.dataAdmissao ? item.dataAdmissao.split('T')[0] : '',
       empresaId: item.idEmpresa,
       empresaNome: item.empresa ? item.empresa.razaoSocial : 'N/A',
-      cargo: item.cargo ? item.cargo.nomeCargo : 'N/A'
+      cargo: item.cargo ? item.cargo.nomeCargo : 'N/A',
+      isCipa: item.isCipa || false
     }));
   },
   createFuncionario: async (data) => {
@@ -218,7 +219,8 @@ export const api = {
       dataAdmissao: formatToISO(data.dataAdmissao),
       dataNascimento: formatToISO(data.dataNascimento),
       idEmpresa: data.empresaId,
-      idCargo: idCargo
+      idCargo: idCargo,
+      isCipa: data.isCipa || false
     };
     const res = await post('/funcionarios', body);
     return {
@@ -230,7 +232,8 @@ export const api = {
       dataAdmissao: res.dataAdmissao ? res.dataAdmissao.split('T')[0] : '',
       empresaId: res.idEmpresa,
       empresaNome: data.empresaNome || 'N/A',
-      cargo: data.cargo || 'N/A'
+      cargo: data.cargo || 'N/A',
+      isCipa: res.isCipa || false
     };
   },
   updateFuncionario: async (id, data) => {
@@ -242,7 +245,8 @@ export const api = {
       dataAdmissao: formatToISO(data.dataAdmissao),
       dataNascimento: formatToISO(data.dataNascimento),
       idEmpresa: data.empresaId,
-      idCargo: idCargo
+      idCargo: idCargo,
+      isCipa: data.isCipa || false
     };
     const res = await put(`/funcionarios/${id}`, body);
     return {
@@ -254,7 +258,8 @@ export const api = {
       dataAdmissao: res.dataAdmissao ? res.dataAdmissao.split('T')[0] : '',
       empresaId: res.idEmpresa,
       empresaNome: data.empresaNome || 'N/A',
-      cargo: data.cargo || 'N/A'
+      cargo: data.cargo || 'N/A',
+      isCipa: res.isCipa || false
     };
   },
   deleteFuncionario: (id) => del(`/funcionarios/${id}`),
@@ -269,18 +274,29 @@ export const api = {
       empresaNome: item.empresa ? item.empresa.razaoSocial : 'N/A',
       dataEmissao: formatToBR(item.dataEmissaoUpload),
       dataVencimento: formatToBR(item.dataValidade),
-      status: item.statusDocumento
+      status: item.statusDocumento,
+      temArquivo: !!item.caminhoArquivo,
+      nomeArquivo: item.nomeArquivo || ''
     }));
   },
   createDocumento: async (data) => {
-    const body = {
-      tipoDocumento: data.tipo,
-      dataEmissaoUpload: formatToISO(data.dataEmissao),
-      dataValidade: formatToISO(data.dataVencimento),
-      statusDocumento: data.status,
-      idEmpresa: data.empresaId
-    };
-    const res = await post('/documentos-sst', body);
+    const formData = new FormData();
+    formData.append('tipoDocumento', data.tipo);
+    formData.append('dataEmissaoUpload', formatToISO(data.dataEmissao));
+    formData.append('dataValidade', formatToISO(data.dataVencimento));
+    formData.append('statusDocumento', data.status);
+    formData.append('idEmpresa', data.empresaId);
+    if (data.arquivo) {
+      formData.append('arquivo', data.arquivo);
+    }
+
+    const response = await fetch(`${BASE_URL}/documentos-sst`, {
+      method: 'POST',
+      body: formData
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const res = await response.json();
+
     return {
       id: res.idDocumento,
       tipo: res.tipoDocumento,
@@ -288,18 +304,29 @@ export const api = {
       empresaNome: data.empresaNome || 'N/A',
       dataEmissao: formatToBR(res.dataEmissaoUpload),
       dataVencimento: formatToBR(res.dataValidade),
-      status: res.statusDocumento
+      status: res.statusDocumento,
+      temArquivo: !!res.caminhoArquivo,
+      nomeArquivo: res.nomeArquivo || ''
     };
   },
   updateDocumento: async (id, data) => {
-    const body = {
-      tipoDocumento: data.tipo,
-      dataEmissaoUpload: formatToISO(data.dataEmissao),
-      dataValidade: formatToISO(data.dataVencimento),
-      statusDocumento: data.status,
-      idEmpresa: data.empresaId
-    };
-    const res = await put(`/documentos-sst/${id}`, body);
+    const formData = new FormData();
+    formData.append('tipoDocumento', data.tipo);
+    formData.append('dataEmissaoUpload', formatToISO(data.dataEmissao));
+    formData.append('dataValidade', formatToISO(data.dataVencimento));
+    formData.append('statusDocumento', data.status);
+    formData.append('idEmpresa', data.empresaId);
+    if (data.arquivo) {
+      formData.append('arquivo', data.arquivo);
+    }
+
+    const response = await fetch(`${BASE_URL}/documentos-sst/${id}`, {
+      method: 'PUT',
+      body: formData
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const res = await response.json();
+
     return {
       id: res.idDocumento,
       tipo: res.tipoDocumento,
@@ -307,7 +334,9 @@ export const api = {
       empresaNome: data.empresaNome || 'N/A',
       dataEmissao: formatToBR(res.dataEmissaoUpload),
       dataVencimento: formatToBR(res.dataValidade),
-      status: res.statusDocumento
+      status: res.statusDocumento,
+      temArquivo: !!res.caminhoArquivo,
+      nomeArquivo: res.nomeArquivo || ''
     };
   },
   deleteDocumento: (id) => del(`/documentos-sst/${id}`),
@@ -325,20 +354,31 @@ export const api = {
       dataVencimento: item.dataValidade ? item.dataValidade.split('T')[0] : '',
       instrutor: item.instrutor || 'Não informado',
       observacoes: item.observacoes,
-      status: item.statusTreinamento
+      status: item.statusTreinamento,
+      temArquivo: !!item.caminhoArquivo,
+      nomeArquivo: item.nomeArquivo || ''
     }));
   },
   createTreinamento: async (data) => {
-    const body = {
-      tipoTreinamento: data.tipo,
-      dataRealizacao: formatToISO(data.dataRealizacao),
-      dataValidade: formatToISO(data.dataVencimento),
-      statusTreinamento: data.status,
-      observacoes: data.observacoes,
-      instrutor: data.instrutor,
-      idFuncionario: data.funcionarioId
-    };
-    const res = await post('/treinamentos', body);
+    const formData = new FormData();
+    formData.append('tipoTreinamento', data.tipo);
+    formData.append('dataRealizacao', formatToISO(data.dataRealizacao));
+    formData.append('dataValidade', formatToISO(data.dataVencimento));
+    formData.append('statusTreinamento', data.status);
+    formData.append('observacoes', data.observacoes);
+    formData.append('instrutor', data.instrutor);
+    formData.append('idFuncionario', data.funcionarioId);
+    if (data.arquivo) {
+      formData.append('arquivo', data.arquivo);
+    }
+
+    const response = await fetch(`${BASE_URL}/treinamentos`, {
+      method: 'POST',
+      body: formData
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const res = await response.json();
+
     return {
       id: res.idTreinamento,
       tipo: res.tipoTreinamento,
@@ -349,20 +389,31 @@ export const api = {
       dataVencimento: res.dataValidade ? res.dataValidade.split('T')[0] : '',
       instrutor: res.instrutor || 'Não informado',
       observacoes: res.observacoes,
-      status: res.statusTreinamento
+      status: res.statusTreinamento,
+      temArquivo: !!res.caminhoArquivo,
+      nomeArquivo: res.nomeArquivo || ''
     };
   },
   updateTreinamento: async (id, data) => {
-    const body = {
-      tipoTreinamento: data.tipo,
-      dataRealizacao: formatToISO(data.dataRealizacao),
-      dataValidade: formatToISO(data.dataVencimento),
-      statusTreinamento: data.status,
-      observacoes: data.observacoes,
-      instrutor: data.instrutor,
-      idFuncionario: data.funcionarioId
-    };
-    const res = await put(`/treinamentos/${id}`, body);
+    const formData = new FormData();
+    formData.append('tipoTreinamento', data.tipo);
+    formData.append('dataRealizacao', formatToISO(data.dataRealizacao));
+    formData.append('dataValidade', formatToISO(data.dataVencimento));
+    formData.append('statusTreinamento', data.status);
+    formData.append('observacoes', data.observacoes);
+    formData.append('instrutor', data.instrutor);
+    formData.append('idFuncionario', data.funcionarioId);
+    if (data.arquivo) {
+      formData.append('arquivo', data.arquivo);
+    }
+
+    const response = await fetch(`${BASE_URL}/treinamentos/${id}`, {
+      method: 'PUT',
+      body: formData
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const res = await response.json();
+
     return {
       id: res.idTreinamento,
       tipo: res.tipoTreinamento,
@@ -373,7 +424,9 @@ export const api = {
       dataVencimento: res.dataValidade ? res.dataValidade.split('T')[0] : '',
       instrutor: res.instrutor || 'Não informado',
       observacoes: res.observacoes,
-      status: res.statusTreinamento
+      status: res.statusTreinamento,
+      temArquivo: !!res.caminhoArquivo,
+      nomeArquivo: res.nomeArquivo || ''
     };
   },
   deleteTreinamento: (id) => del(`/treinamentos/${id}`),
@@ -518,31 +571,42 @@ export const api = {
       medico: item.medico || '',
       crm: item.crm || '',
       testemunhaNome: item.testemunhaNome || '',
-      testemunhaTelefone: item.testemunhaTelefone || ''
+      testemunhaTelefone: item.testemunhaTelefone || '',
+      temArquivo: !!item.caminhoArquivo,
+      nomeArquivo: item.nomeArquivo || ''
     }));
   },
   createAcidente: async (data) => {
-    const body = {
-      dataAcidente: formatToISO(data.data),
-      gravidadeLesao: data.parteCorpo || 'N/A',
-      descricaoEvento: data.descricao,
-      medidasAdotadas: data.agente || 'N/A',
-      idFuncionario: data.funcionarioId,
-      hora: data.hora,
-      local: data.local,
-      parteCorpo: data.parteCorpo,
-      agente: data.agente,
-      cid: data.cid,
-      afastamento: data.afastamento,
-      obito: data.obito,
-      medico: data.medico,
-      crm: data.crm,
-      testemunhaNome: data.testemunhaNome,
-      testemunhaTelefone: data.testemunhaTelefone,
-      catEmitida: !!data.catEmitida,
-      tipo: data.tipo
-    };
-    const res = await post('/acidentes', body);
+    const formData = new FormData();
+    formData.append('dataAcidente', formatToISO(data.data));
+    formData.append('gravidadeLesao', data.parteCorpo || 'N/A');
+    formData.append('descricaoEvento', data.descricao);
+    formData.append('medidasAdotadas', data.agente || 'N/A');
+    formData.append('idFuncionario', data.funcionarioId);
+    formData.append('hora', data.hora);
+    formData.append('local', data.local);
+    formData.append('parteCorpo', data.parteCorpo);
+    formData.append('agente', data.agente);
+    formData.append('cid', data.cid);
+    formData.append('afastamento', data.afastamento);
+    formData.append('obito', data.obito);
+    formData.append('medico', data.medico);
+    formData.append('crm', data.crm);
+    formData.append('testemunhaNome', data.testemunhaNome);
+    formData.append('testemunhaTelefone', data.testemunhaTelefone);
+    formData.append('catEmitida', !!data.catEmitida);
+    formData.append('tipo', data.tipo);
+    if (data.arquivo) {
+      formData.append('arquivo', data.arquivo);
+    }
+
+    const response = await fetch(`${BASE_URL}/acidentes`, {
+      method: 'POST',
+      body: formData
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const res = await response.json();
+
     return {
       id: res.idAcidente,
       data: res.dataAcidente ? res.dataAcidente.split('T')[0] : '',
@@ -563,31 +627,42 @@ export const api = {
       medico: res.medico || '',
       crm: res.crm || '',
       testemunhaNome: res.testemunhaNome || '',
-      testemunhaTelefone: res.testemunhaTelefone || ''
+      testemunhaTelefone: res.testemunhaTelefone || '',
+      temArquivo: !!res.caminhoArquivo,
+      nomeArquivo: res.nomeArquivo || ''
     };
   },
   updateAcidente: async (id, data) => {
-    const body = {
-      dataAcidente: formatToISO(data.data),
-      gravidadeLesao: data.parteCorpo || 'N/A',
-      descricaoEvento: data.descricao,
-      medidasAdotadas: data.agente || 'N/A',
-      idFuncionario: data.funcionarioId,
-      hora: data.hora,
-      local: data.local,
-      parteCorpo: data.parteCorpo,
-      agente: data.agente,
-      cid: data.cid,
-      afastamento: data.afastamento,
-      obito: data.obito,
-      medico: data.medico,
-      crm: data.crm,
-      testemunhaNome: data.testemunhaNome,
-      testemunhaTelefone: data.testemunhaTelefone,
-      catEmitida: !!data.catEmitida,
-      tipo: data.tipo
-    };
-    const res = await put(`/acidentes/${id}`, body);
+    const formData = new FormData();
+    formData.append('dataAcidente', formatToISO(data.data));
+    formData.append('gravidadeLesao', data.parteCorpo || 'N/A');
+    formData.append('descricaoEvento', data.descricao);
+    formData.append('medidasAdotadas', data.agente || 'N/A');
+    formData.append('idFuncionario', data.funcionarioId);
+    formData.append('hora', data.hora);
+    formData.append('local', data.local);
+    formData.append('parteCorpo', data.parteCorpo);
+    formData.append('agente', data.agente);
+    formData.append('cid', data.cid);
+    formData.append('afastamento', data.afastamento);
+    formData.append('obito', data.obito);
+    formData.append('medico', data.medico);
+    formData.append('crm', data.crm);
+    formData.append('testemunhaNome', data.testemunhaNome);
+    formData.append('testemunhaTelefone', data.testemunhaTelefone);
+    formData.append('catEmitida', !!data.catEmitida);
+    formData.append('tipo', data.tipo);
+    if (data.arquivo) {
+      formData.append('arquivo', data.arquivo);
+    }
+
+    const response = await fetch(`${BASE_URL}/acidentes/${id}`, {
+      method: 'PUT',
+      body: formData
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const res = await response.json();
+
     return {
       id: res.idAcidente,
       data: res.dataAcidente ? res.dataAcidente.split('T')[0] : '',
@@ -608,7 +683,9 @@ export const api = {
       medico: res.medico || '',
       crm: res.crm || '',
       testemunhaNome: res.testemunhaNome || '',
-      testemunhaTelefone: res.testemunhaTelefone || ''
+      testemunhaTelefone: res.testemunhaTelefone || '',
+      temArquivo: !!res.caminhoArquivo,
+      nomeArquivo: res.nomeArquivo || ''
     };
   },
   deleteAcidente: (id) => del(`/acidentes/${id}`),
@@ -618,5 +695,10 @@ export const api = {
     const query = new URLSearchParams(params).toString();
     return get(`/dashboard/accidents-trend${query ? `?${query}` : ''}`);
   },
-  getAlerts: () => get('/dashboard/alerts')
+  getAlerts: () => get('/dashboard/alerts'),
+
+  // Autenticação no Banco de Dados
+  login: (email, password) => post('/auth/login', { email, password }),
+  changeCredentials: (currentEmail, currentPassword, newEmail, newPassword) =>
+    post('/auth/change-credentials', { currentEmail, currentPassword, newEmail, newPassword })
 };

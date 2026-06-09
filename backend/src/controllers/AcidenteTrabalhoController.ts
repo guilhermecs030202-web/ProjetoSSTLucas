@@ -1,13 +1,22 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../config/data-source";
 import { AcidenteTrabalho } from "../entities/AcidenteTrabalho";
+import fs from "fs";
+import path from "path";
 
 const acidenteRepository = AppDataSource.getRepository(AcidenteTrabalho);
 
 export class AcidenteTrabalhoController {
     static async create(req: Request, res: Response) {
         try {
-            const novo = acidenteRepository.create(req.body);
+            const data = req.body;
+            if (req.file) {
+                data.nomeArquivo = req.file.originalname;
+                data.mimeType = req.file.mimetype;
+                data.tamanhoArquivo = req.file.size;
+                data.caminhoArquivo = req.file.path;
+            }
+            const novo = acidenteRepository.create(data);
             const resultado = await acidenteRepository.save(novo);
             return res.status(201).json(resultado);
         } catch (error) {
@@ -40,7 +49,19 @@ export class AcidenteTrabalhoController {
             const { id } = req.params as any;
             const acidente = await acidenteRepository.findOneBy({ idAcidente: id });
             if (!acidente) return res.status(404).json({ message: "Acidente de Trabalho não encontrado" });
-            acidenteRepository.merge(acidente, req.body);
+
+            const data = req.body;
+            if (req.file) {
+                if (acidente.caminhoArquivo && fs.existsSync(acidente.caminhoArquivo)) {
+                    fs.unlinkSync(acidente.caminhoArquivo);
+                }
+                data.nomeArquivo = req.file.originalname;
+                data.mimeType = req.file.mimetype;
+                data.tamanhoArquivo = req.file.size;
+                data.caminhoArquivo = req.file.path;
+            }
+
+            acidenteRepository.merge(acidente, data);
             const resultado = await acidenteRepository.save(acidente);
             return res.json(resultado);
         } catch (error) {
@@ -51,11 +72,46 @@ export class AcidenteTrabalhoController {
     static async delete(req: Request, res: Response) {
         try {
             const { id } = req.params as any;
-            const resultado = await acidenteRepository.delete(id);
-            if (resultado.affected === 0) return res.status(404).json({ message: "Acidente de Trabalho não encontrado" });
+            const acidente = await acidenteRepository.findOneBy({ idAcidente: id });
+            if (!acidente) return res.status(404).json({ message: "Acidente de Trabalho não encontrado" });
+
+            if (acidente.caminhoArquivo && fs.existsSync(acidente.caminhoArquivo)) {
+                fs.unlinkSync(acidente.caminhoArquivo);
+            }
+
+            await acidenteRepository.remove(acidente);
             return res.status(204).send();
         } catch (error) {
             return res.status(500).json({ message: "Erro ao deletar acidente", error });
+        }
+    }
+
+    static async download(req: Request, res: Response) {
+        try {
+            const { id } = req.params as any;
+            const acidente = await acidenteRepository.findOneBy({ idAcidente: id });
+            if (!acidente || !acidente.caminhoArquivo || !fs.existsSync(acidente.caminhoArquivo)) {
+                return res.status(404).json({ message: "Arquivo não encontrado" });
+            }
+            res.download(acidente.caminhoArquivo, acidente.nomeArquivo);
+        } catch (error) {
+            return res.status(500).json({ message: "Erro ao baixar documento", error });
+        }
+    }
+
+    static async view(req: Request, res: Response) {
+        try {
+            const { id } = req.params as any;
+            const acidente = await acidenteRepository.findOneBy({ idAcidente: id });
+            if (!acidente || !acidente.caminhoArquivo || !fs.existsSync(acidente.caminhoArquivo)) {
+                return res.status(404).json({ message: "Arquivo não encontrado" });
+            }
+            res.setHeader("Content-Type", acidente.mimeType || "application/pdf");
+            res.setHeader("Content-Disposition", `inline; filename="${acidente.nomeArquivo}"`);
+            const fileStream = fs.createReadStream(acidente.caminhoArquivo);
+            fileStream.pipe(res);
+        } catch (error) {
+            return res.status(500).json({ message: "Erro ao visualizar documento", error });
         }
     }
 }

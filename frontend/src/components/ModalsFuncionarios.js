@@ -2,6 +2,11 @@ import { appState, cartState, INITIAL_STATE, saveState, getFuncionarioCount } fr
 import { updateStats } from '../store/stats.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
 import { api } from '../services/api.js';
+import { maskCPF, validateCPF } from '../utils/formatters.js';
+import { showToast } from '../utils/toast.js';
+import { showConfirmDialog } from '../utils/confirmDialog.js';
+
+window.maskCPF = maskCPF;
 
 export const renderFormFuncionario = (id = null) => {
   const func = id ? appState.funcionarios.find(f => f.id == id) : null;
@@ -24,7 +29,7 @@ export const renderFormFuncionario = (id = null) => {
         </div>
         <div>
           <label class="block text-sm font-semibold text-slate-700 mb-1">CPF</label>
-          <input type="text" id="func-cpf" value="${func ? func.cpf : ''}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm">
+          <input type="text" id="func-cpf" value="${func ? func.cpf : ''}" oninput="window.maskCPF(event)" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm">
         </div>
       </div>
       <div>
@@ -234,6 +239,25 @@ export const handleSaveFuncionario = async (event) => {
     empresaNome: empresa ? empresa.nome : 'N/A'
   };
 
+  if (!validateCPF(dados.cpf)) {
+    showToast('CPF inválido.', 'error');
+    return;
+  }
+
+  if (dados.dataNascimento) {
+    const hoje = new Date();
+    const nascimento = new Date(dados.dataNascimento);
+    let idade = hoje.getFullYear() - nascimento.getFullYear();
+    const m = hoje.getMonth() - nascimento.getMonth();
+    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+      idade--;
+    }
+    if (idade < 18) {
+      showToast('Não é permitido contratar menores de 18 anos.', 'error');
+      return;
+    }
+  }
+
   try {
     if (id) {
       const updated = await api.updateFuncionario(id, dados);
@@ -250,19 +274,19 @@ export const handleSaveFuncionario = async (event) => {
     closeModal();
     window.navigateTo('funcionarios');
   } catch (err) {
-    alert('Erro ao salvar funcionário: ' + err.message);
+    showToast('Erro ao salvar funcionário: ' + err.message, 'error');
   }
 };
 
 export const handleDeleteFuncionario = async (id) => {
-  if (confirm('Tem certeza que deseja excluir este funcionário?')) {
+  if (await showConfirmDialog('Tem certeza que deseja excluir este funcionário?')) {
     try {
       await api.deleteFuncionario(id);
       appState.funcionarios = appState.funcionarios.filter(f => f.id != id);
       updateStats();
       window.navigateTo('funcionarios');
     } catch (err) {
-      alert('Erro ao excluir funcionário: ' + err.message);
+      showToast('Erro ao excluir funcionário: ' + err.message, 'error');
     }
   }
 };

@@ -2,6 +2,8 @@ import { appState, cartState, INITIAL_STATE, saveState, getFuncionarioCount } fr
 import { updateStats } from '../store/stats.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
 import { api } from '../services/api.js';
+import { showToast } from '../utils/toast.js';
+import { showConfirmDialog } from '../utils/confirmDialog.js';
 
 export const renderFormEmpresa = (id = null) => {
   const empresa = id ? appState.empresas.find(e => e.id == id) : null;
@@ -82,7 +84,7 @@ export const renderDetailsEmpresa = (id) => {
         <td class="px-4 py-3 text-sm text-slate-600">${f.cargo}</td>
         <td class="px-4 py-3 text-center">
           <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" class="sr-only peer" ${f.isCipa ? 'checked' : ''} onchange="window.toggleCipa(${f.id}, this.checked)">
+            <input type="checkbox" class="sr-only peer" ${f.isCipa ? 'checked' : ''} onchange="window.toggleCipa('${f.id}', this.checked)">
             <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
           </label>
         </td>
@@ -182,19 +184,19 @@ export const handleSaveEmpresa = async (event) => {
     closeModal();
     window.navigateTo('empresas');
   } catch (err) {
-    alert('Erro ao salvar empresa: ' + err.message);
+    showToast('Erro ao salvar empresa: ' + err.message, 'error');
   }
 };
 
 export const handleDeleteEmpresa = async (id) => {
-  if (confirm('Tem certeza que deseja excluir esta empresa?')) {
+  if (await showConfirmDialog('Tem certeza que deseja excluir esta empresa?')) {
     try {
       await api.deleteEmpresa(id);
       appState.empresas = appState.empresas.filter(emp => emp.id != id);
       updateStats();
       window.navigateTo('empresas');
     } catch (err) {
-      alert('Erro ao excluir empresa: ' + err.message);
+      showToast('Erro ao excluir empresa: ' + err.message, 'error');
     }
   }
 };

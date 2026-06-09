@@ -13,6 +13,7 @@ import catalogoEpiRoutes from "./catalogoEpi.routes";
 import itemCompraEpiRoutes from "./itemCompraEpi.routes";
 import distribuicaoEpiRoutes from "./distribuicaoEpi.routes";
 import statsRoutes from "./stats.routes";
+import authRoutes from "./auth.routes";
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use("/catalogo-epi", catalogoEpiRoutes);
 router.use("/itens-compra-epi", itemCompraEpiRoutes);
 router.use("/distribuicoes-epi", distribuicaoEpiRoutes);
 router.use("/stats", statsRoutes);
+router.use("/auth", authRoutes);
 
 export default router;

@@ -1,6 +1,7 @@
 import { appState, cartState, INITIAL_STATE, saveState, getFuncionarioCount } from '../store/state.js';
 import { openModal, closeModal } from '../components/modalConfig.js';
 import * as Modals from '../components/ModalsFuncionarios.js';
+import { api } from '../services/api.js';
 
 export const renderFuncionarios = () => {
   return `
@@ -90,10 +91,17 @@ export const renderFuncionarios = () => {
   `;
 };
 
-export const toggleCipa = (funcionarioId, isChecked) => {
+export const toggleCipa = async (funcionarioId, isChecked) => {
   const func = appState.funcionarios.find(f => f.id == funcionarioId);
   if (func) {
-    func.isCipa = isChecked;
-    saveState();
+    try {
+      func.isCipa = isChecked;
+      await api.updateFuncionario(funcionarioId, func);
+      saveState();
+    } catch (err) {
+      func.isCipa = !isChecked; // rollback on failure
+      console.error('Erro ao atualizar CIPA:', err);
+      // Forçar atualização visual (se necessário) ou exibir erro
+    }
   }
 };
