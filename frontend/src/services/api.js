@@ -108,6 +108,12 @@ export async function del(endpoint) {
       method: 'DELETE'
     });
     if (!response.ok) {
+      if (response.status === 409) {
+        const errData = await response.json();
+        const error = new Error(errData.message);
+        error.status = 409;
+        throw error;
+      }
       throw new Error(`HTTP ${response.status}`);
     }
     return response.status === 204 ? null : await response.json();
@@ -192,7 +198,7 @@ export const api = {
       dataCriacao: res.dataCriacao
     };
   },
-  deleteEmpresa: (id) => del(`/empresas/${id}`),
+  deleteEmpresa: (id, force=false) => del(`/empresas/${id}${force ? '?force=true' : ''}`),
 
   // Funcionarios
   getFuncionarios: async () => {
@@ -262,7 +268,7 @@ export const api = {
       isCipa: res.isCipa || false
     };
   },
-  deleteFuncionario: (id) => del(`/funcionarios/${id}`),
+  deleteFuncionario: (id, force=false) => del(`/funcionarios/${id}${force ? '?force=true' : ''}`),
 
   // Documentos
   getDocumentos: async () => {

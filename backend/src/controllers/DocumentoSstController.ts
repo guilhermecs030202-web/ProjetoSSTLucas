@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../config/data-source";
 import { DocumentoSst } from "../entities/DocumentoSst";
 import fs from "fs";
-import path from "path";
+import { getAbsoluteFilePath, deleteFileIfExists } from "../utils/fileStorage";
 
 const documentoSstRepository = AppDataSource.getRepository(DocumentoSst);
 
@@ -14,7 +14,7 @@ export class DocumentoSstController {
                 data.nomeArquivo = req.file.originalname;
                 data.mimeType = req.file.mimetype;
                 data.tamanhoArquivo = req.file.size;
-                data.caminhoArquivo = req.file.path;
+                data.caminhoArquivo = req.file.filename;
             }
             const novo = documentoSstRepository.create(data);
             const resultado = await documentoSstRepository.save(novo);
@@ -52,13 +52,13 @@ export class DocumentoSstController {
             
             const data = req.body;
             if (req.file) {
-                if (doc.caminhoArquivo && fs.existsSync(doc.caminhoArquivo)) {
-                    fs.unlinkSync(doc.caminhoArquivo);
+                if (doc.caminhoArquivo) {
+                    deleteFileIfExists(doc.caminhoArquivo);
                 }
                 data.nomeArquivo = req.file.originalname;
                 data.mimeType = req.file.mimetype;
                 data.tamanhoArquivo = req.file.size;
-                data.caminhoArquivo = req.file.path;
+                data.caminhoArquivo = req.file.filename;
             }
 
             documentoSstRepository.merge(doc, data);
@@ -75,8 +75,8 @@ export class DocumentoSstController {
             const doc = await documentoSstRepository.findOneBy({ idDocumento: id });
             if (!doc) return res.status(404).json({ message: "Documento SST não encontrado" });
 
-            if (doc.caminhoArquivo && fs.existsSync(doc.caminhoArquivo)) {
-                fs.unlinkSync(doc.caminhoArquivo);
+            if (doc.caminhoArquivo) {
+                deleteFileIfExists(doc.caminhoArquivo);
             }
 
             await documentoSstRepository.remove(doc);
@@ -90,10 +90,11 @@ export class DocumentoSstController {
         try {
             const { id } = req.params as any;
             const doc = await documentoSstRepository.findOneBy({ idDocumento: id });
-            if (!doc || !doc.caminhoArquivo || !fs.existsSync(doc.caminhoArquivo)) {
+            const filePath = doc?.caminhoArquivo ? getAbsoluteFilePath(doc.caminhoArquivo) : "";
+            if (!doc || !filePath || !fs.existsSync(filePath)) {
                 return res.status(404).json({ message: "Arquivo não encontrado" });
             }
-            res.download(doc.caminhoArquivo, doc.nomeArquivo);
+            res.download(filePath, doc.nomeArquivo);
         } catch (error) {
             return res.status(500).json({ message: "Erro ao baixar documento", error });
         }
@@ -103,12 +104,13 @@ export class DocumentoSstController {
         try {
             const { id } = req.params as any;
             const doc = await documentoSstRepository.findOneBy({ idDocumento: id });
-            if (!doc || !doc.caminhoArquivo || !fs.existsSync(doc.caminhoArquivo)) {
+            const filePath = doc?.caminhoArquivo ? getAbsoluteFilePath(doc.caminhoArquivo) : "";
+            if (!doc || !filePath || !fs.existsSync(filePath)) {
                 return res.status(404).json({ message: "Arquivo não encontrado" });
             }
             res.setHeader("Content-Type", doc.mimeType || "application/pdf");
             res.setHeader("Content-Disposition", `inline; filename="${doc.nomeArquivo}"`);
-            const fileStream = fs.createReadStream(doc.caminhoArquivo);
+            const fileStream = fs.createReadStream(filePath);
             fileStream.pipe(res);
         } catch (error) {
             return res.status(500).json({ message: "Erro ao visualizar documento", error });

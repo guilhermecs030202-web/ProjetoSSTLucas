@@ -188,15 +188,21 @@ export const handleSaveEmpresa = async (event) => {
   }
 };
 
-export const handleDeleteEmpresa = async (id) => {
-  if (await showConfirmDialog('Tem certeza que deseja excluir esta empresa?')) {
+export const handleDeleteEmpresa = async (id, force = false) => {
+  if (force || await showConfirmDialog('Tem certeza que deseja excluir esta empresa?')) {
     try {
-      await api.deleteEmpresa(id);
+      await api.deleteEmpresa(id, force);
       appState.empresas = appState.empresas.filter(emp => emp.id != id);
       updateStats();
       window.navigateTo('empresas');
     } catch (err) {
-      showToast('Erro ao excluir empresa: ' + err.message, 'error');
+      if (err.status === 409) {
+        if (await showConfirmDialog(err.message)) {
+          return handleDeleteEmpresa(id, true);
+        }
+      } else {
+        showToast('Erro ao excluir empresa: ' + err.message, 'error');
+      }
     }
   }
 };

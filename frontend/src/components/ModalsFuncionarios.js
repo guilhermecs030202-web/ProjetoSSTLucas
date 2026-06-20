@@ -278,15 +278,21 @@ export const handleSaveFuncionario = async (event) => {
   }
 };
 
-export const handleDeleteFuncionario = async (id) => {
-  if (await showConfirmDialog('Tem certeza que deseja excluir este funcionário?')) {
+export const handleDeleteFuncionario = async (id, force = false) => {
+  if (force || await showConfirmDialog('Tem certeza que deseja excluir este funcionário?')) {
     try {
-      await api.deleteFuncionario(id);
+      await api.deleteFuncionario(id, force);
       appState.funcionarios = appState.funcionarios.filter(f => f.id != id);
       updateStats();
       window.navigateTo('funcionarios');
     } catch (err) {
-      showToast('Erro ao excluir funcionário: ' + err.message, 'error');
+      if (err.status === 409) {
+        if (await showConfirmDialog(err.message)) {
+          return handleDeleteFuncionario(id, true);
+        }
+      } else {
+        showToast('Erro ao excluir funcionário: ' + err.message, 'error');
+      }
     }
   }
 };

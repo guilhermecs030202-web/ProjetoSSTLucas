@@ -1,4 +1,4 @@
-import { object, string, boolean } from "zod";
+import { object, string, boolean, preprocess } from "zod";
 
 export const createAcidenteTrabalhoSchema = object({
     body: object({
@@ -7,7 +7,7 @@ export const createAcidenteTrabalhoSchema = object({
         descricaoEvento: string({ message: "Descrição do evento é obrigatória" }),
         medidasAdotadas: string().optional().nullable(),
         anexoImagem: string().optional().nullable(),
-        idFuncionario: string().uuid("ID de funcionário inválido").optional().nullable(),
+        idFuncionario: preprocess(val => val === "" || val === "undefined" ? undefined : val, string().uuid("ID de funcionário inválido").optional().nullable()),
         hora: string().optional().nullable(),
         local: string().optional().nullable(),
         parteCorpo: string().optional().nullable(),
@@ -19,9 +19,9 @@ export const createAcidenteTrabalhoSchema = object({
         crm: string().optional().nullable(),
         testemunhaNome: string().optional().nullable(),
         testemunhaTelefone: string().optional().nullable(),
-        catEmitida: boolean().optional(),
+        catEmitida: preprocess(val => val === "true" || val === true, boolean().optional()),
         tipo: string().optional().nullable(),
-    })
+    }).passthrough()
 });
 
 export const updateAcidenteTrabalhoSchema = object({
@@ -31,7 +31,7 @@ export const updateAcidenteTrabalhoSchema = object({
         descricaoEvento: string().optional(),
         medidasAdotadas: string().optional().nullable(),
         anexoImagem: string().optional().nullable(),
-        idFuncionario: string().uuid("ID de funcionário inválido").optional().nullable(),
+        idFuncionario: preprocess(val => val === "" || val === "undefined" ? undefined : val, string().uuid("ID de funcionário inválido").optional().nullable()),
         hora: string().optional().nullable(),
         local: string().optional().nullable(),
         parteCorpo: string().optional().nullable(),
@@ -43,9 +43,9 @@ export const updateAcidenteTrabalhoSchema = object({
         crm: string().optional().nullable(),
         testemunhaNome: string().optional().nullable(),
         testemunhaTelefone: string().optional().nullable(),
-        catEmitida: boolean().optional(),
+        catEmitida: preprocess(val => val === "true" || val === true, boolean().optional()),
         tipo: string().optional().nullable(),
-    }),
+    }).passthrough(),
     params: object({
         id: string().uuid("ID inválido")
     })

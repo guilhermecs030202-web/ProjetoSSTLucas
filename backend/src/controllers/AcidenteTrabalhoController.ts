@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../config/data-source";
 import { AcidenteTrabalho } from "../entities/AcidenteTrabalho";
 import fs from "fs";
-import path from "path";
+import { getAbsoluteFilePath, deleteFileIfExists } from "../utils/fileStorage";
 
 const acidenteRepository = AppDataSource.getRepository(AcidenteTrabalho);
 
@@ -14,7 +14,7 @@ export class AcidenteTrabalhoController {
                 data.nomeArquivo = req.file.originalname;
                 data.mimeType = req.file.mimetype;
                 data.tamanhoArquivo = req.file.size;
-                data.caminhoArquivo = req.file.path;
+                data.caminhoArquivo = req.file.filename;
             }
             const novo = acidenteRepository.create(data);
             const resultado = await acidenteRepository.save(novo);
@@ -52,13 +52,13 @@ export class AcidenteTrabalhoController {
 
             const data = req.body;
             if (req.file) {
-                if (acidente.caminhoArquivo && fs.existsSync(acidente.caminhoArquivo)) {
-                    fs.unlinkSync(acidente.caminhoArquivo);
+                if (acidente.caminhoArquivo) {
+                    deleteFileIfExists(acidente.caminhoArquivo);
                 }
                 data.nomeArquivo = req.file.originalname;
                 data.mimeType = req.file.mimetype;
                 data.tamanhoArquivo = req.file.size;
-                data.caminhoArquivo = req.file.path;
+                data.caminhoArquivo = req.file.filename;
             }
 
             acidenteRepository.merge(acidente, data);
@@ -75,8 +75,8 @@ export class AcidenteTrabalhoController {
             const acidente = await acidenteRepository.findOneBy({ idAcidente: id });
             if (!acidente) return res.status(404).json({ message: "Acidente de Trabalho não encontrado" });
 
-            if (acidente.caminhoArquivo && fs.existsSync(acidente.caminhoArquivo)) {
-                fs.unlinkSync(acidente.caminhoArquivo);
+            if (acidente.caminhoArquivo) {
+                deleteFileIfExists(acidente.caminhoArquivo);
             }
 
             await acidenteRepository.remove(acidente);
@@ -90,10 +90,11 @@ export class AcidenteTrabalhoController {
         try {
             const { id } = req.params as any;
             const acidente = await acidenteRepository.findOneBy({ idAcidente: id });
-            if (!acidente || !acidente.caminhoArquivo || !fs.existsSync(acidente.caminhoArquivo)) {
+            const filePath = acidente?.caminhoArquivo ? getAbsoluteFilePath(acidente.caminhoArquivo) : "";
+            if (!acidente || !filePath || !fs.existsSync(filePath)) {
                 return res.status(404).json({ message: "Arquivo não encontrado" });
             }
-            res.download(acidente.caminhoArquivo, acidente.nomeArquivo);
+            res.download(filePath, acidente.nomeArquivo);
         } catch (error) {
             return res.status(500).json({ message: "Erro ao baixar documento", error });
         }
@@ -103,12 +104,13 @@ export class AcidenteTrabalhoController {
         try {
             const { id } = req.params as any;
             const acidente = await acidenteRepository.findOneBy({ idAcidente: id });
-            if (!acidente || !acidente.caminhoArquivo || !fs.existsSync(acidente.caminhoArquivo)) {
+            const filePath = acidente?.caminhoArquivo ? getAbsoluteFilePath(acidente.caminhoArquivo) : "";
+            if (!acidente || !filePath || !fs.existsSync(filePath)) {
                 return res.status(404).json({ message: "Arquivo não encontrado" });
             }
             res.setHeader("Content-Type", acidente.mimeType || "application/pdf");
             res.setHeader("Content-Disposition", `inline; filename="${acidente.nomeArquivo}"`);
-            const fileStream = fs.createReadStream(acidente.caminhoArquivo);
+            const fileStream = fs.createReadStream(filePath);
             fileStream.pipe(res);
         } catch (error) {
             return res.status(500).json({ message: "Erro ao visualizar documento", error });

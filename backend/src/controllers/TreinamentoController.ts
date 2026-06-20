@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../config/data-source";
 import { Treinamento } from "../entities/Treinamento";
 import fs from "fs";
-import path from "path";
+import { getAbsoluteFilePath, deleteFileIfExists } from "../utils/fileStorage";
 
 const treinamentoRepository = AppDataSource.getRepository(Treinamento);
 
@@ -14,7 +14,7 @@ export class TreinamentoController {
                 data.nomeArquivo = req.file.originalname;
                 data.mimeType = req.file.mimetype;
                 data.tamanhoArquivo = req.file.size;
-                data.caminhoArquivo = req.file.path;
+                data.caminhoArquivo = req.file.filename;
             }
             const novo = treinamentoRepository.create(data);
             const resultado = await treinamentoRepository.save(novo);
@@ -52,13 +52,13 @@ export class TreinamentoController {
 
             const data = req.body;
             if (req.file) {
-                if (treino.caminhoArquivo && fs.existsSync(treino.caminhoArquivo)) {
-                    fs.unlinkSync(treino.caminhoArquivo);
+                if (treino.caminhoArquivo) {
+                    deleteFileIfExists(treino.caminhoArquivo);
                 }
                 data.nomeArquivo = req.file.originalname;
                 data.mimeType = req.file.mimetype;
                 data.tamanhoArquivo = req.file.size;
-                data.caminhoArquivo = req.file.path;
+                data.caminhoArquivo = req.file.filename;
             }
 
             treinamentoRepository.merge(treino, data);
@@ -75,8 +75,8 @@ export class TreinamentoController {
             const treino = await treinamentoRepository.findOneBy({ idTreinamento: id });
             if (!treino) return res.status(404).json({ message: "Treinamento não encontrado" });
 
-            if (treino.caminhoArquivo && fs.existsSync(treino.caminhoArquivo)) {
-                fs.unlinkSync(treino.caminhoArquivo);
+            if (treino.caminhoArquivo) {
+                deleteFileIfExists(treino.caminhoArquivo);
             }
 
             await treinamentoRepository.remove(treino);
@@ -90,10 +90,11 @@ export class TreinamentoController {
         try {
             const { id } = req.params as any;
             const treino = await treinamentoRepository.findOneBy({ idTreinamento: id });
-            if (!treino || !treino.caminhoArquivo || !fs.existsSync(treino.caminhoArquivo)) {
+            const filePath = treino?.caminhoArquivo ? getAbsoluteFilePath(treino.caminhoArquivo) : "";
+            if (!treino || !filePath || !fs.existsSync(filePath)) {
                 return res.status(404).json({ message: "Arquivo não encontrado" });
             }
-            res.download(treino.caminhoArquivo, treino.nomeArquivo);
+            res.download(filePath, treino.nomeArquivo);
         } catch (error) {
             return res.status(500).json({ message: "Erro ao baixar documento", error });
         }
@@ -103,12 +104,13 @@ export class TreinamentoController {
         try {
             const { id } = req.params as any;
             const treino = await treinamentoRepository.findOneBy({ idTreinamento: id });
-            if (!treino || !treino.caminhoArquivo || !fs.existsSync(treino.caminhoArquivo)) {
+            const filePath = treino?.caminhoArquivo ? getAbsoluteFilePath(treino.caminhoArquivo) : "";
+            if (!treino || !filePath || !fs.existsSync(filePath)) {
                 return res.status(404).json({ message: "Arquivo não encontrado" });
             }
             res.setHeader("Content-Type", treino.mimeType || "application/pdf");
             res.setHeader("Content-Disposition", `inline; filename="${treino.nomeArquivo}"`);
-            const fileStream = fs.createReadStream(treino.caminhoArquivo);
+            const fileStream = fs.createReadStream(filePath);
             fileStream.pipe(res);
         } catch (error) {
             return res.status(500).json({ message: "Erro ao visualizar documento", error });

@@ -58,12 +58,23 @@ export class FuncionarioController {
     static async delete(req: Request, res: Response) {
         try {
             const { id } = req.params as any;
+            const { force } = req.query as any;
+
+            if (force === 'true') {
+                await AppDataSource.getRepository("Treinamento").delete({ idFuncionario: id });
+                await AppDataSource.getRepository("AsoAtestado").delete({ idFuncionario: id });
+                await AppDataSource.getRepository("AcidenteTrabalho").delete({ idFuncionario: id });
+            }
+
             const resultado = await funcionarioRepository.delete(id);
             if (resultado.affected === 0) {
                 return res.status(404).json({ message: "Funcionário não encontrado" });
             }
             return res.status(204).send();
-        } catch (error) {
+        } catch (error: any) {
+            if (error.code === 'ER_ROW_IS_REFERENCED_2' || error.errno === 1451) {
+                return res.status(409).json({ message: "Existem registros vinculados a este funcionário (treinamentos, acidentes, etc.). Deseja excluir todos os dados vinculados também?", code: "FOREIGN_KEY_VIOLATION" });
+            }
             return res.status(500).json({ message: "Erro ao deletar funcionário", error });
         }
     }

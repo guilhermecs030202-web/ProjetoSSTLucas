@@ -6,11 +6,11 @@ dotenv.config();
 async function sync() {
     console.log("Connecting to MySQL to create USUARIOS table...");
     const connection = await mysql.createConnection({
-        host: process.env.DB_HOST || "localhost",
-        port: parseInt(process.env.DB_PORT || "3306"),
-        user: process.env.DB_USER || "root",
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME || "sst_db",
+        host: process.env.DB_HOST || process.env.MYSQLHOST || "localhost",
+        port: parseInt(process.env.DB_PORT || process.env.MYSQLPORT || "3306"),
+        user: process.env.DB_USER || process.env.MYSQLUSER || "root",
+        password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
+        database: process.env.DB_NAME || process.env.MYSQLDATABASE || "sst_db",
     });
 
     console.log("Connected to MySQL.");
@@ -31,25 +31,22 @@ async function sync() {
     await connection.query(createTableQuery);
     console.log("Table 'usuarios' created or verified successfully.");
 
-    // Let's also insert a default user for testing if the table is empty!
-    // As per user criteria: "Não existem usuários fixos armazenados em memória para autenticação."
-    // and "Usuário existente consegue realizar login com sucesso."
-    // We can insert a default admin user into the DB if the table has 0 rows.
-    // The credentials can be: admin@sst.com.br / admin123
-    // We need to hash 'admin123' using bcryptjs.
-    // Let's use bcryptjs to hash it.
+    // Configurações do administrador inicial via variáveis de ambiente
+    const adminEmail = process.env.INITIAL_ADMIN_EMAIL || "admin@sst.com.br";
+    const adminLogin = process.env.INITIAL_ADMIN_LOGIN || "admin";
+    const adminPassword = process.env.INITIAL_ADMIN_PASSWORD || "admin123";
+
     const [rows]: any[] = await connection.query("SELECT COUNT(*) as count FROM usuarios");
     if (rows[0].count === 0) {
         const bcrypt = require("bcryptjs");
-        const hashedPw = await bcrypt.hash("admin123", 10);
-        // Generate a random UUID
+        const hashedPw = await bcrypt.hash(adminPassword, 10);
         const crypto = require("crypto");
         const idUsuario = crypto.randomUUID();
         await connection.query(
             "INSERT INTO usuarios (id_usuario, login, email, senha) VALUES (?, ?, ?, ?)",
-            [idUsuario, "admin", "admin@sst.com.br", hashedPw]
+            [idUsuario, adminLogin, adminEmail, hashedPw]
         );
-        console.log("Default user (admin@sst.com.br / admin123) inserted into 'usuarios' table.");
+        console.log(`Default user (${adminEmail} / ${adminLogin}) inserted into 'usuarios' table.`);
     }
 
     await connection.end();
@@ -58,11 +55,11 @@ async function sync() {
 async function syncDocumentoColumns() {
     console.log("Adding file columns to DOCUMENTO_SST table...");
     const connection = await mysql.createConnection({
-        host: process.env.DB_HOST || "localhost",
-        port: parseInt(process.env.DB_PORT || "3306"),
-        user: process.env.DB_USER || "root",
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME || "sst_db",
+        host: process.env.DB_HOST || process.env.MYSQLHOST || "localhost",
+        port: parseInt(process.env.DB_PORT || process.env.MYSQLPORT || "3306"),
+        user: process.env.DB_USER || process.env.MYSQLUSER || "root",
+        password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
+        database: process.env.DB_NAME || process.env.MYSQLDATABASE || "sst_db",
     });
 
     const alterQueries = [

@@ -3,7 +3,9 @@ import path from "path";
 import crypto from "crypto";
 import fs from "fs";
 
-const uploadDir = path.resolve(__dirname, "..", "..", "uploads");
+export const uploadDir = process.env.UPLOAD_DIR
+    ? path.resolve(process.env.UPLOAD_DIR)
+    : path.resolve(__dirname, "..", "..", "uploads");
 
 // Ensure the upload directory exists
 if (!fs.existsSync(uploadDir)) {
