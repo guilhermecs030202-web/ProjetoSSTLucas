@@ -18,13 +18,21 @@ import { Usuario } from "../entities/Usuario";
 
 dotenv.config();
 
+const isNeon = !!process.env.DATABASE_URL;
+
 export const AppDataSource = new DataSource({
     type: "postgres",
-    host: process.env.DB_HOST || process.env.PGHOST || "localhost",
-    port: parseInt(process.env.DB_PORT || process.env.PGPORT || "5432"),
-    username: process.env.DB_USER || process.env.PGUSER || "sst_user",
-    password: process.env.DB_PASSWORD || process.env.PGPASSWORD || "sst_password",
-    database: process.env.DB_NAME || process.env.PGDATABASE || "sst_db",
+    ...(isNeon
+        ? { url: process.env.DATABASE_URL }
+        : {
+            host: process.env.DB_HOST || process.env.PGHOST || "localhost",
+            port: parseInt(process.env.DB_PORT || process.env.PGPORT || "5432"),
+            username: process.env.DB_USER || process.env.PGUSER || "sst_user",
+            password: process.env.DB_PASSWORD || process.env.PGPASSWORD || "sst_password",
+            database: process.env.DB_NAME || process.env.PGDATABASE || "sst_db",
+        }
+    ),
+    ssl: isNeon ? { rejectUnauthorized: false } : false,
     synchronize: false, // Use migrations in production
     logging: false,
     entities: [

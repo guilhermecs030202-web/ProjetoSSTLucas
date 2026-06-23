@@ -5,13 +5,16 @@ dotenv.config();
 
 async function sync() {
     console.log("Connecting to PostgreSQL to create USUARIOS table...");
-    const client = new Client({
-        host: process.env.DB_HOST || process.env.PGHOST || "localhost",
-        port: parseInt(process.env.DB_PORT || process.env.PGPORT || "5432"),
-        user: process.env.DB_USER || process.env.PGUSER || "postgres",
-        password: process.env.DB_PASSWORD || process.env.PGPASSWORD,
-        database: process.env.DB_NAME || process.env.PGDATABASE || "sst_db",
-    });
+    const clientConfig = process.env.DATABASE_URL
+        ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
+        : {
+            host: process.env.DB_HOST || process.env.PGHOST || "localhost",
+            port: parseInt(process.env.DB_PORT || process.env.PGPORT || "5432"),
+            user: process.env.DB_USER || process.env.PGUSER || "postgres",
+            password: process.env.DB_PASSWORD || process.env.PGPASSWORD,
+            database: process.env.DB_NAME || process.env.PGDATABASE || "sst_db",
+          };
+    const client = new Client(clientConfig);
 
     await client.connect();
     console.log("Connected to PostgreSQL.");
@@ -54,13 +57,16 @@ async function sync() {
 
 async function syncDocumentoColumns() {
     console.log("Adding file columns to DOCUMENTO_SST and other tables...");
-    const client = new Client({
-        host: process.env.DB_HOST || process.env.PGHOST || "localhost",
-        port: parseInt(process.env.DB_PORT || process.env.PGPORT || "5432"),
-        user: process.env.DB_USER || process.env.PGUSER || "postgres",
-        password: process.env.DB_PASSWORD || process.env.PGPASSWORD,
-        database: process.env.DB_NAME || process.env.PGDATABASE || "sst_db",
-    });
+    const clientConfig = process.env.DATABASE_URL
+        ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
+        : {
+            host: process.env.DB_HOST || process.env.PGHOST || "localhost",
+            port: parseInt(process.env.DB_PORT || process.env.PGPORT || "5432"),
+            user: process.env.DB_USER || process.env.PGUSER || "postgres",
+            password: process.env.DB_PASSWORD || process.env.PGPASSWORD,
+            database: process.env.DB_NAME || process.env.PGDATABASE || "sst_db",
+          };
+    const client = new Client(clientConfig);
 
     await client.connect();
 
