@@ -19,13 +19,13 @@ import { Usuario } from "../entities/Usuario";
 dotenv.config();
 
 export const AppDataSource = new DataSource({
-    type: "mysql",
-    host: process.env.DB_HOST || process.env.MYSQLHOST || "localhost",
-    port: parseInt(process.env.DB_PORT || process.env.MYSQLPORT || "3306"),
-    username: process.env.DB_USER || process.env.MYSQLUSER || "sst_user",
-    password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || "sst_password",
-    database: process.env.DB_NAME || process.env.MYSQLDATABASE || "sst_db",
-    synchronize: false, // Auto-create tables in development
+    type: "postgres",
+    host: process.env.DB_HOST || process.env.PGHOST || "localhost",
+    port: parseInt(process.env.DB_PORT || process.env.PGPORT || "5432"),
+    username: process.env.DB_USER || process.env.PGUSER || "sst_user",
+    password: process.env.DB_PASSWORD || process.env.PGPASSWORD || "sst_password",
+    database: process.env.DB_NAME || process.env.PGDATABASE || "sst_db",
+    synchronize: false, // Use migrations in production
     logging: false,
     entities: [
         Empresa,

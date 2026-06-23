@@ -1,6 +1,6 @@
 # Como fazer o Deploy do Backend no Railway.app
 
-O backend deste projeto foi preparado para rodar perfeitamente no Railway.app com banco de dados MySQL e persistência de arquivos. A sincronização do banco de dados (tabelas, novas colunas e usuário admin inicial) ocorre de forma **100% automática** a cada inicialização do servidor.
+O backend deste projeto foi preparado para rodar perfeitamente no Railway.app com banco de dados PostgreSQL e persistência de arquivos. A sincronização do banco de dados (tabelas, novas colunas e usuário admin inicial) ocorre de forma **100% automática** a cada inicialização do servidor.
 
 ---
 
@@ -9,9 +9,9 @@ O backend deste projeto foi preparado para rodar perfeitamente no Railway.app co
 ### 1. Criar conta no Railway
 Acesse [railway.app](https://railway.app) e crie uma conta gratuita integrada com o seu GitHub.
 
-### 2. Criar um Novo Projeto com MySQL
+### 2. Criar um Novo Projeto com PostgreSQL
 1. No painel do Railway, clique em **"New Project"**.
-2. Selecione a opção **"Provision MySQL"**.
+2. Selecione a opção **"Provision PostgreSQL"**.
 3. Aguarde alguns segundos enquanto o banco de dados é criado.
 
 ### 3. Conectar o Repositório do Backend
@@ -24,7 +24,7 @@ Acesse [railway.app](https://railway.app) e crie uma conta gratuita integrada co
 No Railway, acesse a aba **"Variables"** do serviço do seu backend e adicione as seguintes variáveis:
 
 * **Variáveis de Conexão com o Banco (Railway Link):**
-  * O Railway já cria essas variáveis automaticamente se você provisionou o MySQL no mesmo projeto. Nós preparamos o código para ler o padrão do Railway automaticamente!
+  * O Railway já cria essas variáveis automaticamente se você provisionou o PostgreSQL no mesmo projeto. Nós preparamos o código para ler o padrão do Railway automaticamente!
 * **Diretório de Uploads:**
   * **Key:** `UPLOAD_DIR`
   * **Value:** `/app/uploads`
